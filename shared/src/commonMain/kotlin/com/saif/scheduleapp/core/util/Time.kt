@@ -10,15 +10,21 @@ object TimeUtils {
     /**
      * Returns the current local date-time safely converting stdlib Clock to kotlinx-datetime.
      */
-    fun nowLocalDateTime(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDateTime {
-        return Clock.System.now().toLocalDateTime(timeZone)
+    fun nowLocalDateTime(
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        clock: Clock = Clock.System
+    ): LocalDateTime {
+        return clock.now().toLocalDateTime(timeZone)
     }
 
     /**
      * Returns the current time as minutes since midnight (0..1439).
      */
-    fun currentMinutesSinceMidnight(timeZone: TimeZone = TimeZone.currentSystemDefault()): Int {
-        val now = nowLocalDateTime(timeZone)
+    fun currentMinutesSinceMidnight(
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        clock: Clock = Clock.System
+    ): Int {
+        val now = nowLocalDateTime(timeZone, clock)
         return now.hour * 60 + now.minute
     }
 
@@ -73,3 +79,9 @@ object TimeUtils {
         return startMinutes > currentMinutes
     }
 }
+
+/**
+ * Helper function to format minutes into display string, e.g. "09:30 AM".
+ */
+fun formatTime(minutes: Int): String = TimeUtils.formatMinutesToTimeString(minutes)
+

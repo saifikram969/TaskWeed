@@ -16,7 +16,12 @@ class AppModuleTest {
     @Test
     fun testAppModuleDependenciesResolution() {
         val koinApp = koinApplication {
-            modules(appModule)
+            modules(
+                appModule,
+                org.koin.dsl.module {
+                    single<ScheduleRepository> { com.saif.scheduleapp.data.repository.InMemoryScheduleRepository() }
+                }
+            )
         }
 
         val repository = koinApp.koin.get<ScheduleRepository>()
@@ -36,5 +41,17 @@ class AppModuleTest {
 
         val pdfReader = koinApp.koin.get<PdfReader>()
         assertNotNull(pdfReader)
+
+        val addTask = koinApp.koin.get<com.saif.scheduleapp.domain.usecase.AddTask>()
+        assertNotNull(addTask)
+
+        val addTaskViewModel = koinApp.koin.get<com.saif.scheduleapp.presentation.addtask.AddTaskViewModel>()
+        assertNotNull(addTaskViewModel)
+
+        val rescheduleAllReminders = koinApp.koin.get<com.saif.scheduleapp.domain.usecase.RescheduleAllReminders>()
+        assertNotNull(rescheduleAllReminders)
+
+        val reminderViewModel = koinApp.koin.get<com.saif.scheduleapp.presentation.reminder.ReminderViewModel>()
+        assertNotNull(reminderViewModel)
     }
 }

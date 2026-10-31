@@ -10,4 +10,6 @@ interface ScheduleRepository {
         taskId: Long,
         done: Boolean
     )
+
+    suspend fun addTask(task: ScheduleTask): Long
 }

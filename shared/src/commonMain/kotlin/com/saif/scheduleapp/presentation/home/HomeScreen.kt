@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,6 +71,7 @@ import com.saif.scheduleapp.domain.model.ScheduleTask
 fun HomeScreen(
     state: HomeUiState,
     onToggleTask: (ScheduleTask) -> Unit,
+    onNavigateToAddTask: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -88,7 +90,7 @@ fun HomeScreen(
                     .fillMaxSize()
                     .widthIn(max = contentMaxWidth)
                     .padding(horizontal = horizontalPadding),
-                contentPadding = PaddingValues(top = 28.dp, bottom = 48.dp),
+                contentPadding = PaddingValues(top = 28.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // 1. Dashboard Header
@@ -98,44 +100,72 @@ fun HomeScreen(
                     )
                 }
 
-                // 2. Progress Overview Card
+                // Battery Optimization Notice
                 item {
-                    ProgressSummaryCard(
-                        doneCount = state.doneCount,
-                        totalCount = state.totalCount
-                    )
+                    BatteryOptimizationCard()
                 }
 
-                // 3. Current Task Section
-                item {
-                    CurrentTaskSection(
-                        nowTask = state.nowTask,
-                        onToggleTask = onToggleTask
-                    )
-                }
-
-                // 4. Upcoming Tasks Section
-                item {
-                    UpcomingTasksHeader(count = state.upcoming.size)
-                }
-
-                if (state.upcoming.isEmpty()) {
+                if (state.totalCount == 0) {
                     item {
-                        EmptyUpcomingCard(
-                            isAllDone = state.totalCount > 0 && state.doneCount == state.totalCount
-                        )
+                        EmptyScheduleCard()
                     }
                 } else {
-                    items(
-                        items = state.upcoming,
-                        key = { it.id }
-                    ) { task ->
-                        TaskItemCard(
-                            task = task,
-                            onToggle = { onToggleTask(task) }
+                    // 2. Progress Overview Card
+                    item {
+                        ProgressSummaryCard(
+                            doneCount = state.doneCount,
+                            totalCount = state.totalCount
                         )
                     }
+
+                    // 3. Current Task Section
+                    item {
+                        CurrentTaskSection(
+                            nowTask = state.nowTask,
+                            onToggleTask = onToggleTask
+                        )
+                    }
+
+                    // 4. Upcoming Tasks Section
+                    item {
+                        UpcomingTasksHeader(count = state.upcoming.size)
+                    }
+
+                    if (state.upcoming.isEmpty()) {
+                        item {
+                            EmptyUpcomingCard(
+                                isAllDone = state.totalCount > 0 && state.doneCount == state.totalCount
+                            )
+                        }
+                    } else {
+                        items(
+                            items = state.upcoming,
+                            key = { it.id }
+                        ) { task ->
+                            TaskItemCard(
+                                task = task,
+                                onToggle = { onToggleTask(task) }
+                            )
+                        }
+                    }
                 }
+            }
+
+            FloatingActionButton(
+                onClick = onNavigateToAddTask,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp),
+                containerColor = AppPrimary,
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Text(
+                    text = "+",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
         }
     }
@@ -551,3 +581,33 @@ private fun EmptyUpcomingCard(
         }
     }
 }
+
+@Composable
+private fun EmptyScheduleCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppCardBackground)
+            .border(1.dp, AppCardBorder, RoundedCornerShape(18.dp))
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "📝",
+                fontSize = 36.sp
+            )
+            Text(
+                text = "No tasks yet. Tap + to add one",
+                style = MaterialTheme.typography.titleMedium,
+                color = AppTextMain,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+

@@ -6,4 +6,24 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
+    alias(libs.plugins.kotlinSerialization) apply false
+    alias(libs.plugins.sqldelight) apply false
+    kotlin("jvm") version "2.4.21"
+}
+
+allprojects {
+    tasks.whenTaskAdded {
+        if (name.contains("AarMetadata")) {
+            enabled = false
+        }
+    }
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+    testImplementation(kotlin("test"))
+}
+kotlin {
+    jvmToolchain(8)
 }

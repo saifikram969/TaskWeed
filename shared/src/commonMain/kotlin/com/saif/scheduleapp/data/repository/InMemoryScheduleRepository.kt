@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class InMemoryScheduleRepository(
-    initialTasks: List<ScheduleTask> = defaultInitialTasks
+    initialTasks: List<ScheduleTask> = emptyList()
 ) : ScheduleRepository {
 
     private val _tasks = MutableStateFlow(initialTasks)
@@ -26,6 +26,16 @@ class InMemoryScheduleRepository(
                 }
             }
         }
+    }
+
+    override suspend fun addTask(task: ScheduleTask): Long {
+        var generatedId: Long = 1L
+        _tasks.update { currentTasks ->
+            val nextId = (currentTasks.maxOfOrNull { it.id } ?: 0L) + 1L
+            generatedId = nextId
+            (currentTasks + task.copy(id = nextId)).sortedBy { it.startMinutes }
+        }
+        return generatedId
     }
 
     companion object {

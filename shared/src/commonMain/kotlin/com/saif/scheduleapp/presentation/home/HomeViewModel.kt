@@ -3,37 +3,26 @@ package com.saif.scheduleapp.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.saif.scheduleapp.core.util.TimeUtils
+import com.saif.scheduleapp.core.util.minuteTicker
 import com.saif.scheduleapp.domain.model.ScheduleTask
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
 import com.saif.scheduleapp.domain.usecase.MarkTaskDone
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val getTodayTasks: GetTodayTasks,
-    private val markTaskDone: MarkTaskDone
+    private val markTaskDone: MarkTaskDone,
+    minuteTicker: Flow<Int> = minuteTicker()
 ) : ViewModel() {
-
-    private val _currentMinutes = MutableStateFlow(TimeUtils.currentMinutesSinceMidnight())
-
-    init {
-        viewModelScope.launch {
-            while (isActive) {
-                _currentMinutes.value = TimeUtils.currentMinutesSinceMidnight()
-                delay(10_000L)
-            }
-        }
-    }
 
     val uiState: StateFlow<HomeUiState> = combine(
         getTodayTasks(),
-        _currentMinutes
+        minuteTicker
     ) { tasks, nowMinutes ->
         calculateUiState(tasks, nowMinutes)
     }.stateIn(
@@ -71,7 +60,7 @@ class HomeViewModel(
                 !task.isDone &&
                 task.id != nowTask?.id &&
                 TimeUtils.isUpcoming(task.startMinutes, nowMinutes)
-            }
+            }.sortedBy { it.startMinutes }
 
             return HomeUiState(
                 nowTask = nowTask,

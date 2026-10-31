@@ -5,4 +5,5 @@ import com.saif.scheduleapp.domain.model.ScheduleTask
 interface ReminderScheduler {
     fun schedule(task: ScheduleTask)
     fun cancel(taskId: Long)
+    fun snooze(task: ScheduleTask, minutes: Int)
 }

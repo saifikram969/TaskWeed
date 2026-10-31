@@ -1,27 +1,14 @@
 package com.saif.scheduleapp.core.di
 
-import com.saif.scheduleapp.domain.model.ScheduleTask
+import com.saif.scheduleapp.data.repository.InMemoryScheduleRepository
 import com.saif.scheduleapp.domain.platform.PdfReader
 import com.saif.scheduleapp.domain.platform.ReminderScheduler
 import com.saif.scheduleapp.domain.platform.Speaker
+import com.saif.scheduleapp.domain.repository.ScheduleRepository
+import com.saif.scheduleapp.reminder.WebReminderScheduler
+import com.saif.scheduleapp.reminder.WebSpeaker
 import org.koin.core.module.Module
 import org.koin.dsl.module
-
-class WasmJsReminderScheduler : ReminderScheduler {
-    override fun schedule(task: ScheduleTask) {
-        println("WasmJsReminderScheduler: Scheduled reminder for '${task.title}' at ${task.startMinutes} mins")
-    }
-
-    override fun cancel(taskId: Long) {
-        println("WasmJsReminderScheduler: Canceled reminder for task ID $taskId")
-    }
-}
-
-class WasmJsSpeaker : Speaker {
-    override fun speak(text: String) {
-        println("WasmJsSpeaker: Speaking '$text'")
-    }
-}
 
 class WasmJsPdfReader : PdfReader {
     override suspend fun extractText(bytes: ByteArray): String {
@@ -30,7 +17,9 @@ class WasmJsPdfReader : PdfReader {
 }
 
 actual val platformModule: Module = module {
-    single<ReminderScheduler> { WasmJsReminderScheduler() }
-    single<Speaker> { WasmJsSpeaker() }
+    single<ReminderScheduler> { WebReminderScheduler() }
+    single<Speaker> { WebSpeaker() }
     single<PdfReader> { WasmJsPdfReader() }
+
+    single<ScheduleRepository> { InMemoryScheduleRepository() }
 }
