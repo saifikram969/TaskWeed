@@ -21,6 +21,7 @@ kotlin-js-store/
 .kotlin/
 
 # Files to ignore
-docs/AGENT_BRIEF_4.md
+docs/AGENT_BRIEF_*.md
+docs/*.md
 sample_schedule.pdf
 **/sample_schedule.pdf
