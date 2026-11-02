@@ -7,5 +7,6 @@ data class HomeUiState(
     val upcoming: List<ScheduleTask> = emptyList(),
     val doneCount: Int = 0,
     val totalCount: Int = 0,
-    val currentDate: String = ""
+    val currentDate: String = "",
+    val isPdfImportSupported: Boolean = false
 )

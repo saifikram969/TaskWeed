@@ -1,11 +1,14 @@
 package com.saif.scheduleapp.core.di
 
 import com.saif.scheduleapp.domain.usecase.AddTask
+import com.saif.scheduleapp.domain.usecase.ClearAllTasks
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
+import com.saif.scheduleapp.domain.usecase.ImportTasks
 import com.saif.scheduleapp.domain.usecase.MarkTaskDone
 import com.saif.scheduleapp.domain.usecase.RescheduleAllReminders
 import com.saif.scheduleapp.presentation.addtask.AddTaskViewModel
 import com.saif.scheduleapp.presentation.home.HomeViewModel
+import com.saif.scheduleapp.presentation.importschedule.ImportViewModel
 import com.saif.scheduleapp.presentation.reminder.ReminderViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -21,12 +24,15 @@ val appModule: Module = module {
     factory { MarkTaskDone(repository = get()) }
     factory { AddTask(repository = get(), scheduler = get()) }
     factory { RescheduleAllReminders(repository = get(), scheduler = get()) }
+    factory { ClearAllTasks(repository = get(), scheduler = get()) }
+    factory { ImportTasks(addTask = get(), clearAllTasks = get()) }
 
-    // Presentation ViewModel
+    // Presentation ViewModels
     factory {
         HomeViewModel(
             getTodayTasks = get(),
-            markTaskDone = get()
+            markTaskDone = get(),
+            pdfReader = getOrNull()
         )
     }
     factory {
@@ -38,6 +44,12 @@ val appModule: Module = module {
         ReminderViewModel(
             repository = get(),
             scheduler = get()
+        )
+    }
+    factory {
+        ImportViewModel(
+            pdfReader = get(),
+            importTasks = get()
         )
     }
 }

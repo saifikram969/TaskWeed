@@ -11,6 +11,8 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 class WasmJsPdfReader : PdfReader {
+    override val isSupported: Boolean = false
+
     override suspend fun extractText(bytes: ByteArray): String {
         return "PDF text extraction requires external pdf.js on WebAssembly."
     }

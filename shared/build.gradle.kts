@@ -59,6 +59,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.koin.android)
             implementation(libs.sqldelight.android.driver)
+            implementation(libs.pdfbox.android)
         }
         iosMain.dependencies {
             implementation(libs.sqldelight.native.driver)
@@ -68,6 +69,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
+            implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.components.resources)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -78,6 +80,8 @@ kotlin {
             implementation(libs.androidx.navigation.compose)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
+            // Compose Multiplatform file picker dialog
+            implementation(libs.filekit.dialogs.compose)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -95,6 +99,7 @@ sqldelight {
     databases {
         create("ScheduleDatabase") {
             packageName.set("com.saif.scheduleapp.db")
+            verifyMigrations.set(true)
         }
     }
 }

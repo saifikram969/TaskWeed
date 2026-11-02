@@ -15,9 +15,9 @@ class AddTaskTest {
     private class FakeScheduleRepository : ScheduleRepository {
         val tasks = mutableListOf<ScheduleTask>()
 
-        override fun observeTasks(): Flow<List<ScheduleTask>> = flowOf(tasks)
+        override fun observeTasks(date: kotlinx.datetime.LocalDate): Flow<List<ScheduleTask>> = flowOf(tasks)
 
-        override suspend fun setDone(taskId: Long, done: Boolean) {
+        override suspend fun setDone(taskId: Long, date: kotlinx.datetime.LocalDate, done: Boolean) {
             val index = tasks.indexOfFirst { it.id == taskId }
             if (index != -1) {
                 tasks[index] = tasks[index].copy(isDone = done)
@@ -29,6 +29,12 @@ class AddTaskTest {
             tasks.add(task.copy(id = nextId))
             return nextId
         }
+
+        override suspend fun clearAllTasks() {
+            tasks.clear()
+        }
+
+        override suspend fun getAllTasks(): List<ScheduleTask> = tasks
     }
 
     @Test

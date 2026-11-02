@@ -11,14 +11,9 @@ import com.saif.scheduleapp.domain.platform.Speaker
 import com.saif.scheduleapp.domain.repository.ScheduleRepository
 import com.saif.scheduleapp.reminder.AndroidReminderScheduler
 import com.saif.scheduleapp.reminder.AndroidSpeaker
+import com.saif.scheduleapp.platform.AndroidPdfReader
 import org.koin.core.module.Module
 import org.koin.dsl.module
-
-class AndroidPdfReader : PdfReader {
-    override suspend fun extractText(bytes: ByteArray): String {
-        return "PDF text extraction requires a third-party library on Android (e.g. PDFBox)."
-    }
-}
 
 actual val platformModule: Module = module {
     single<ReminderScheduler> {

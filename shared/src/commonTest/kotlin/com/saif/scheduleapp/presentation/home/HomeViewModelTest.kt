@@ -138,9 +138,11 @@ class HomeViewModelTest {
     fun testFlowUpdatesNowTaskAsTimeChangesAcrossThreeFakeTimes() = kotlinx.coroutines.test.runTest {
         val fakeRepo = object : ScheduleRepository {
             private val _tasks = MutableStateFlow(sampleTasks)
-            override fun observeTasks(): Flow<List<ScheduleTask>> = _tasks
-            override suspend fun setDone(taskId: Long, done: Boolean) {}
+            override fun observeTasks(date: kotlinx.datetime.LocalDate): Flow<List<ScheduleTask>> = _tasks
+            override suspend fun setDone(taskId: Long, date: kotlinx.datetime.LocalDate, done: Boolean) {}
             override suspend fun addTask(task: ScheduleTask): Long = 1L
+            override suspend fun clearAllTasks() {}
+            override suspend fun getAllTasks(): List<ScheduleTask> = _tasks.value
         }
 
         val fakeTicker = MutableStateFlow(550)

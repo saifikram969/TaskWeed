@@ -9,8 +9,10 @@ import com.saif.scheduleapp.domain.model.ScheduleTask
 import com.saif.scheduleapp.domain.repository.ScheduleRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
 
 class SqlDelightScheduleRepository(
     private val database: ScheduleDatabase
@@ -18,19 +20,30 @@ class SqlDelightScheduleRepository(
 
     private val queries = database.scheduleTaskQueries
 
-    override fun observeTasks(): Flow<List<ScheduleTask>> {
-        return queries.selectAll()
+    override fun observeTasks(date: LocalDate): Flow<List<ScheduleTask>> {
+        val tasksFlow = queries.selectAll()
             .asFlow()
             .mapToList(Dispatchers.Default)
-            .map { list -> list.map { it.toDomain() } }
+
+        val completedIdsFlow = queries.selectCompletedTaskIdsForDate(date.toString())
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { it.toSet() }
+
+        return tasksFlow.combine(completedIdsFlow) { tasks, completedIds ->
+            tasks.map { dbTask ->
+                dbTask.toDomain(isCompleted = dbTask.id in completedIds)
+            }
+        }
     }
 
-    override suspend fun setDone(taskId: Long, done: Boolean) {
+    override suspend fun setDone(taskId: Long, date: LocalDate, done: Boolean) {
         withContext(Dispatchers.Default) {
-            queries.setDone(
-                isDone = if (done) 1L else 0L,
-                id = taskId
-            )
+            if (done) {
+                queries.insertCompletion(taskId = taskId, date = date.toString())
+            } else {
+                queries.deleteCompletion(taskId = taskId, date = date.toString())
+            }
         }
     }
 
@@ -43,10 +56,25 @@ class SqlDelightScheduleRepository(
                     startMinutes = task.startMinutes.toLong(),
                     endMinutes = task.endMinutes.toLong(),
                     category = task.category.toDbString(),
-                    isDone = if (task.isDone) 1L else 0L
+                    isDone = 0L
                 )
                 queries.lastInsertRowId().executeAsOne()
             }
+        }
+    }
+
+    override suspend fun clearAllTasks() {
+        withContext(Dispatchers.Default) {
+            queries.transaction {
+                queries.clearAllCompletions()
+                queries.clearAllTasks()
+            }
+        }
+    }
+
+    override suspend fun getAllTasks(): List<ScheduleTask> {
+        return withContext(Dispatchers.Default) {
+            queries.selectAll().executeAsList().map { it.toDomain(isCompleted = false) }
         }
     }
 }

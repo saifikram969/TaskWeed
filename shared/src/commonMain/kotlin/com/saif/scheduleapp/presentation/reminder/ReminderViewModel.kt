@@ -25,7 +25,7 @@ class ReminderViewModel(
 
     fun loadTask(taskId: Long) {
         viewModelScope.launch(dispatcher) {
-            val tasks = repository.observeTasks().firstOrNull() ?: emptyList()
+            val tasks = repository.getAllTasks()
             val matchedTask = tasks.find { it.id == taskId }
             if (matchedTask != null) {
                 _uiState.update { it.copy(task = matchedTask) }

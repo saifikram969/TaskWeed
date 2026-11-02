@@ -4,7 +4,7 @@ import com.saif.scheduleapp.domain.model.Category
 import com.saif.scheduleapp.domain.model.ScheduleTask
 import com.saif.scheduleapp.db.ScheduleTask as ScheduleTaskEntity
 
-fun ScheduleTaskEntity.toDomain(): ScheduleTask {
+fun ScheduleTaskEntity.toDomain(isCompleted: Boolean = false): ScheduleTask {
     return ScheduleTask(
         id = id,
         title = title,
@@ -12,7 +12,7 @@ fun ScheduleTaskEntity.toDomain(): ScheduleTask {
         startMinutes = startMinutes.toInt(),
         endMinutes = endMinutes.toInt(),
         category = category.toCategory(),
-        isDone = isDone != 0L
+        isDone = isCompleted
     )
 }
 

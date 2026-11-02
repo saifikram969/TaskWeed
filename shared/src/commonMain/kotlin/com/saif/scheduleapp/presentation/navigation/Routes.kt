@@ -7,3 +7,6 @@ data object HomeRoute
 
 @Serializable
 data object AddTaskRoute
+
+@Serializable
+data object ImportRoute

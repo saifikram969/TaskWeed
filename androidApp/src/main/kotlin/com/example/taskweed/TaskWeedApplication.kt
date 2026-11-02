@@ -5,6 +5,7 @@ import android.util.Log
 import com.saif.scheduleapp.core.di.initKoin
 import com.saif.scheduleapp.domain.usecase.RescheduleAllReminders
 import com.saif.scheduleapp.reminder.NotificationChannels
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,6 +15,10 @@ import org.koin.android.ext.koin.androidContext
 class TaskWeedApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize PDFBox for Android
+        PDFBoxResourceLoader.init(applicationContext)
+
         initKoin {
             androidContext(this@TaskWeedApplication)
         }

@@ -1,0 +1,5 @@
+CREATE TABLE taskCompletion (
+    taskId INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    PRIMARY KEY (taskId, date)
+);

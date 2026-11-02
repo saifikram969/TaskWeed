@@ -7,17 +7,12 @@ import com.saif.scheduleapp.domain.platform.PdfReader
 import com.saif.scheduleapp.domain.platform.ReminderScheduler
 import com.saif.scheduleapp.domain.platform.Speaker
 import com.saif.scheduleapp.domain.repository.ScheduleRepository
+import com.saif.scheduleapp.platform.IosPdfReader
 import com.saif.scheduleapp.reminder.IosNotificationDelegate
 import com.saif.scheduleapp.reminder.IosReminderScheduler
 import com.saif.scheduleapp.reminder.IosSpeaker
 import org.koin.core.module.Module
 import org.koin.dsl.module
-
-class IosPdfReader : PdfReader {
-    override suspend fun extractText(bytes: ByteArray): String {
-        return "PDF text extraction requires PDFKit on iOS."
-    }
-}
 
 actual val platformModule: Module = module {
     single<Speaker> { IosSpeaker() }

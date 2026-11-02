@@ -1,30 +1,44 @@
 package com.saif.scheduleapp.data.repository
 
+import com.saif.scheduleapp.core.util.TimeUtils
 import com.saif.scheduleapp.domain.model.Category
 import com.saif.scheduleapp.domain.model.ScheduleTask
 import com.saif.scheduleapp.domain.repository.ScheduleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.LocalDate
 
 class InMemoryScheduleRepository(
     initialTasks: List<ScheduleTask> = emptyList()
 ) : ScheduleRepository {
 
-    private val _tasks = MutableStateFlow(initialTasks)
+    private val _tasks = MutableStateFlow(initialTasks.map { it.copy(isDone = false) })
+    private val _completedTasks = MutableStateFlow<Map<LocalDate, Set<Long>>>(emptyMap())
 
-    override fun observeTasks(): Flow<List<ScheduleTask>> = _tasks.asStateFlow()
+    init {
+        val initialDoneIds = initialTasks.filter { it.isDone }.map { it.id }.toSet()
+        if (initialDoneIds.isNotEmpty()) {
+            val today = TimeUtils.nowLocalDateTime().date
+            _completedTasks.value = mapOf(today to initialDoneIds)
+        }
+    }
 
-    override suspend fun setDone(taskId: Long, done: Boolean) {
-        _tasks.update { currentTasks ->
-            currentTasks.map { task ->
-                if (task.id == taskId) {
-                    task.copy(isDone = done)
-                } else {
-                    task
-                }
+    override fun observeTasks(date: LocalDate): Flow<List<ScheduleTask>> {
+        return combine(_tasks, _completedTasks) { tasks, completedMap ->
+            val completedIds = completedMap[date] ?: emptySet()
+            tasks.map { task ->
+                task.copy(isDone = task.id in completedIds)
             }
+        }
+    }
+
+    override suspend fun setDone(taskId: Long, date: LocalDate, done: Boolean) {
+        _completedTasks.update { currentMap ->
+            val currentSet = currentMap[date] ?: emptySet()
+            val newSet = if (done) currentSet + taskId else currentSet - taskId
+            currentMap + (date to newSet)
         }
     }
 
@@ -33,9 +47,18 @@ class InMemoryScheduleRepository(
         _tasks.update { currentTasks ->
             val nextId = (currentTasks.maxOfOrNull { it.id } ?: 0L) + 1L
             generatedId = nextId
-            (currentTasks + task.copy(id = nextId)).sortedBy { it.startMinutes }
+            (currentTasks + task.copy(id = nextId, isDone = false)).sortedBy { it.startMinutes }
         }
         return generatedId
+    }
+
+    override suspend fun clearAllTasks() {
+        _tasks.value = emptyList()
+        _completedTasks.value = emptyMap()
+    }
+
+    override suspend fun getAllTasks(): List<ScheduleTask> {
+        return _tasks.value.map { it.copy(isDone = false) }
     }
 
     companion object {
@@ -98,17 +121,26 @@ class InMemoryScheduleRepository(
                 id = 7L,
                 title = "Maghrib Prayer & Dinner",
                 details = "Sunset prayer followed by dinner with family.",
-                startMinutes = 1180, // 07:40 PM
-                endMinutes = 1240, // 08:40 PM
+                startMinutes = 1185, // 07:45 PM
+                endMinutes = 1245, // 08:45 PM
                 category = Category.PRAYER,
                 isDone = false
             ),
             ScheduleTask(
                 id = 8L,
-                title = "Evening Wind-Down & Rest",
-                details = "Reading, screen downtime, and preparing for restful sleep.",
-                startMinutes = 1320, // 10:00 PM
-                endMinutes = 1410, // 11:30 PM
+                title = "Isha Prayer & Evening Reading",
+                details = "Night prayer followed by reading literature and journaling.",
+                startMinutes = 1260, // 09:00 PM
+                endMinutes = 1320, // 10:00 PM
+                category = Category.PRAYER,
+                isDone = false
+            ),
+            ScheduleTask(
+                id = 9L,
+                title = "Night Rest & Sleep",
+                details = "Wind down and sleep to prepare for the next productive day.",
+                startMinutes = 1350, // 10:30 PM
+                endMinutes = 300,  // 05:00 AM (next day)
                 category = Category.REST,
                 isDone = false
             )

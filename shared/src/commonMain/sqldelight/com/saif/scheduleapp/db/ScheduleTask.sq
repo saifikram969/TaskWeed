@@ -8,6 +8,12 @@ CREATE TABLE scheduleTask (
     isDone INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE taskCompletion (
+    taskId INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    PRIMARY KEY (taskId, date)
+);
+
 selectAll:
 SELECT * FROM scheduleTask ORDER BY startMinutes ASC;
 
@@ -20,3 +26,21 @@ VALUES (:title, :details, :startMinutes, :endMinutes, :category, :isDone);
 
 lastInsertRowId:
 SELECT last_insert_rowid();
+
+insertCompletion:
+INSERT OR REPLACE INTO taskCompletion(taskId, date)
+VALUES (:taskId, :date);
+
+deleteCompletion:
+DELETE FROM taskCompletion
+WHERE taskId = :taskId AND date = :date;
+
+selectCompletedTaskIdsForDate:
+SELECT taskId FROM taskCompletion
+WHERE date = :date;
+
+clearAllTasks:
+DELETE FROM scheduleTask;
+
+clearAllCompletions:
+DELETE FROM taskCompletion;

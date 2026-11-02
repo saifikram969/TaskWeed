@@ -28,9 +28,11 @@ class ReminderViewModelTest {
     private class FakeScheduleRepository(
         private val tasks: List<ScheduleTask>
     ) : ScheduleRepository {
-        override fun observeTasks(): Flow<List<ScheduleTask>> = flowOf(tasks)
-        override suspend fun setDone(taskId: Long, done: Boolean) {}
+        override fun observeTasks(date: kotlinx.datetime.LocalDate): Flow<List<ScheduleTask>> = flowOf(tasks)
+        override suspend fun setDone(taskId: Long, date: kotlinx.datetime.LocalDate, done: Boolean) {}
         override suspend fun addTask(task: ScheduleTask): Long = 0L
+        override suspend fun clearAllTasks() {}
+        override suspend fun getAllTasks(): List<ScheduleTask> = tasks
     }
 
     private class FakeReminderScheduler : ReminderScheduler {

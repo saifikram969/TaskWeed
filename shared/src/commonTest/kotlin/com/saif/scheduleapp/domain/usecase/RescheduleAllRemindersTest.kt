@@ -7,6 +7,7 @@ import com.saif.scheduleapp.domain.repository.ScheduleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -16,9 +17,11 @@ class RescheduleAllRemindersTest {
     private class FakeScheduleRepository(
         private val tasks: List<ScheduleTask>
     ) : ScheduleRepository {
-        override fun observeTasks(): Flow<List<ScheduleTask>> = flowOf(tasks)
-        override suspend fun setDone(taskId: Long, done: Boolean) {}
+        override fun observeTasks(date: LocalDate): Flow<List<ScheduleTask>> = flowOf(tasks)
+        override suspend fun setDone(taskId: Long, date: LocalDate, done: Boolean) {}
         override suspend fun addTask(task: ScheduleTask): Long = 0L
+        override suspend fun clearAllTasks() {}
+        override suspend fun getAllTasks(): List<ScheduleTask> = tasks
     }
 
     private class FakeReminderScheduler : ReminderScheduler {
@@ -40,7 +43,7 @@ class RescheduleAllRemindersTest {
     }
 
     @Test
-    fun testRescheduleSchedulesOnlyNotDoneTasks() = runTest {
+    fun testRescheduleSchedulesAllTasksRegardlessOfCompletion() = runTest {
         val task1 = ScheduleTask(
             id = 1L,
             title = "Task 1",
@@ -59,17 +62,8 @@ class RescheduleAllRemindersTest {
             category = Category.JOBS,
             isDone = true
         )
-        val task3 = ScheduleTask(
-            id = 3L,
-            title = "Task 3",
-            details = "Another active task",
-            startMinutes = 700,
-            endMinutes = 750,
-            category = Category.REST,
-            isDone = false
-        )
 
-        val repository = FakeScheduleRepository(listOf(task1, task2, task3))
+        val repository = FakeScheduleRepository(listOf(task1, task2))
         val scheduler = FakeReminderScheduler()
         val rescheduleAllReminders = RescheduleAllReminders(repository, scheduler)
 
@@ -77,8 +71,19 @@ class RescheduleAllRemindersTest {
 
         assertEquals(2, scheduler.scheduledTasks.size)
         assertTrue(scheduler.scheduledTasks.any { it.id == 1L })
-        assertTrue(scheduler.scheduledTasks.any { it.id == 3L })
-        assertTrue(scheduler.scheduledTasks.none { it.id == 2L })
+        assertTrue(scheduler.scheduledTasks.any { it.id == 2L })
+    }
+
+    @Test
+    fun testRescheduleWithEmptyList() = runTest {
+        val repository = FakeScheduleRepository(emptyList())
+        val scheduler = FakeReminderScheduler()
+        val rescheduleAllReminders = RescheduleAllReminders(repository, scheduler)
+
+        rescheduleAllReminders()
+
+        assertTrue(scheduler.scheduledTasks.isEmpty())
+        assertTrue(scheduler.canceledTaskIds.isEmpty())
+        assertTrue(scheduler.snoozedTasks.isEmpty())
     }
 }
-

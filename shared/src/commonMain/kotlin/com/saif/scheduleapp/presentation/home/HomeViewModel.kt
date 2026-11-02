@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.saif.scheduleapp.core.util.TimeUtils
 import com.saif.scheduleapp.core.util.minuteTicker
 import com.saif.scheduleapp.domain.model.ScheduleTask
+import com.saif.scheduleapp.domain.platform.PdfReader
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
 import com.saif.scheduleapp.domain.usecase.MarkTaskDone
 import kotlinx.coroutines.flow.Flow
@@ -17,18 +18,24 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     private val getTodayTasks: GetTodayTasks,
     private val markTaskDone: MarkTaskDone,
+    private val pdfReader: PdfReader? = null,
     minuteTicker: Flow<Int> = minuteTicker()
 ) : ViewModel() {
+
+    private val isPdfSupported: Boolean = pdfReader?.isSupported ?: false
 
     val uiState: StateFlow<HomeUiState> = combine(
         getTodayTasks(),
         minuteTicker
     ) { tasks, nowMinutes ->
-        calculateUiState(tasks, nowMinutes)
+        calculateUiState(tasks, nowMinutes, isPdfSupported)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000L),
-        initialValue = HomeUiState(currentDate = TimeUtils.currentDateDisplay())
+        initialValue = HomeUiState(
+            currentDate = TimeUtils.currentDateDisplay(),
+            isPdfImportSupported = isPdfSupported
+        )
     )
 
     fun onToggleTaskDone(task: ScheduleTask) {
@@ -44,7 +51,11 @@ class HomeViewModel(
     }
 
     companion object {
-        fun calculateUiState(tasks: List<ScheduleTask>, nowMinutes: Int): HomeUiState {
+        fun calculateUiState(
+            tasks: List<ScheduleTask>,
+            nowMinutes: Int,
+            isPdfImportSupported: Boolean = false
+        ): HomeUiState {
             val totalCount = tasks.size
             val doneCount = tasks.count { it.isDone }
 
@@ -67,7 +78,8 @@ class HomeViewModel(
                 upcoming = upcoming,
                 doneCount = doneCount,
                 totalCount = totalCount,
-                currentDate = TimeUtils.currentDateDisplay()
+                currentDate = TimeUtils.currentDateDisplay(),
+                isPdfImportSupported = isPdfImportSupported
             )
         }
     }

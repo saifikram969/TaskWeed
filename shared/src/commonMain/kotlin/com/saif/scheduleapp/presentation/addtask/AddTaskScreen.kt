@@ -375,7 +375,7 @@ fun AddTaskScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimePickerModalDialog(
+internal fun TimePickerModalDialog(
     title: String,
     initialMinutes: Int,
     onConfirm: (Int) -> Unit,

@@ -72,6 +72,7 @@ fun HomeScreen(
     state: HomeUiState,
     onToggleTask: (ScheduleTask) -> Unit,
     onNavigateToAddTask: () -> Unit = {},
+    onNavigateToImport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -151,21 +152,41 @@ fun HomeScreen(
                 }
             }
 
-            FloatingActionButton(
-                onClick = onNavigateToAddTask,
+            Row(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(24.dp),
-                containerColor = AppPrimary,
-                contentColor = Color.White,
-                shape = CircleShape
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "+",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                if (state.isPdfImportSupported) {
+                    FloatingActionButton(
+                        onClick = onNavigateToImport,
+                        containerColor = AppCardBackground,
+                        contentColor = AppAccent,
+                        shape = CircleShape,
+                        modifier = Modifier.border(1.dp, AppCardBorder, CircleShape)
+                    ) {
+                        Text(
+                            text = "📄",
+                            fontSize = 20.sp
+                        )
+                    }
+                }
+
+                FloatingActionButton(
+                    onClick = onNavigateToAddTask,
+                    containerColor = AppPrimary,
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Text(
+                        text = "+",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }

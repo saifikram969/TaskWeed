@@ -19,3 +19,8 @@ captures
 node_modules/
 kotlin-js-store/
 .kotlin/
+
+# Files to ignore
+docs/AGENT_BRIEF_4.md
+sample_schedule.pdf
+**/sample_schedule.pdf
