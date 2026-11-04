@@ -72,6 +72,7 @@ fun HomeScreen(
     state: HomeUiState,
     onToggleTask: (ScheduleTask) -> Unit,
     onNavigateToAddTask: () -> Unit = {},
+    onNavigateToEditTask: (Long) -> Unit = {},
     onNavigateToImport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -123,7 +124,8 @@ fun HomeScreen(
                     item {
                         CurrentTaskSection(
                             nowTask = state.nowTask,
-                            onToggleTask = onToggleTask
+                            onToggleTask = onToggleTask,
+                            onEditTask = onNavigateToEditTask
                         )
                     }
 
@@ -145,7 +147,8 @@ fun HomeScreen(
                         ) { task ->
                             TaskItemCard(
                                 task = task,
-                                onToggle = { onToggleTask(task) }
+                                onToggle = { onToggleTask(task) },
+                                onEdit = { onNavigateToEditTask(task.id) }
                             )
                         }
                     }
@@ -279,7 +282,8 @@ private fun ProgressSummaryCard(
 @Composable
 private fun CurrentTaskSection(
     nowTask: ScheduleTask?,
-    onToggleTask: (ScheduleTask) -> Unit
+    onToggleTask: (ScheduleTask) -> Unit,
+    onEditTask: (Long) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -305,7 +309,8 @@ private fun CurrentTaskSection(
         if (nowTask != null) {
             ActiveTaskCard(
                 task = nowTask,
-                onToggle = { onToggleTask(nowTask) }
+                onToggle = { onToggleTask(nowTask) },
+                onEdit = { onEditTask(nowTask.id) }
             )
         } else {
             NoActiveTaskCard()
@@ -316,7 +321,8 @@ private fun CurrentTaskSection(
 @Composable
 private fun ActiveTaskCard(
     task: ScheduleTask,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onEdit: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -324,7 +330,6 @@ private fun ActiveTaskCard(
             .clip(RoundedCornerShape(22.dp))
             .background(AppCardBackground)
             .border(1.5.dp, AppAccent, RoundedCornerShape(22.dp))
-            .clickable(onClick = onToggle)
             .padding(20.dp)
     ) {
         Column {
@@ -349,7 +354,8 @@ private fun ActiveTaskCard(
                 text = task.title,
                 style = MaterialTheme.typography.titleLarge,
                 color = AppTextMain,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onEdit)
             )
 
             if (task.details.isNotBlank()) {
@@ -461,7 +467,8 @@ private fun UpcomingTasksHeader(count: Int) {
 @Composable
 private fun TaskItemCard(
     task: ScheduleTask,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onEdit: () -> Unit
 ) {
     val cardBackground by animateColorAsState(
         targetValue = if (task.isDone) TaskDoneBackground else AppCardBackground
@@ -476,7 +483,7 @@ private fun TaskItemCard(
             .clip(RoundedCornerShape(18.dp))
             .background(cardBackground)
             .border(1.dp, cardBorder, RoundedCornerShape(18.dp))
-            .clickable(onClick = onToggle)
+            .clickable(onClick = onEdit)
             .padding(16.dp)
     ) {
         Row(

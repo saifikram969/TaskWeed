@@ -2,6 +2,8 @@ package com.saif.scheduleapp.data.repository
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import com.saif.scheduleapp.data.local.toBitmaskLong
+import com.saif.scheduleapp.data.local.toCategory
 import com.saif.scheduleapp.data.local.toDbString
 import com.saif.scheduleapp.data.local.toDomain
 import com.saif.scheduleapp.db.ScheduleDatabase
@@ -56,10 +58,42 @@ class SqlDelightScheduleRepository(
                     startMinutes = task.startMinutes.toLong(),
                     endMinutes = task.endMinutes.toLong(),
                     category = task.category.toDbString(),
-                    isDone = 0L
+                    isDone = 0L,
+                    repeatDays = task.repeatDays.toBitmaskLong(),
+                    voiceEnabled = if (task.voiceEnabled) 1L else 0L
                 )
                 queries.lastInsertRowId().executeAsOne()
             }
+        }
+    }
+
+    override suspend fun updateTask(task: ScheduleTask) {
+        withContext(Dispatchers.Default) {
+            queries.updateTask(
+                id = task.id,
+                title = task.title,
+                details = task.details,
+                startMinutes = task.startMinutes.toLong(),
+                endMinutes = task.endMinutes.toLong(),
+                category = task.category.toDbString(),
+                repeatDays = task.repeatDays.toBitmaskLong(),
+                voiceEnabled = if (task.voiceEnabled) 1L else 0L
+            )
+        }
+    }
+
+    override suspend fun deleteTask(taskId: Long) {
+        withContext(Dispatchers.Default) {
+            queries.transaction {
+                queries.deleteCompletionsForTask(taskId)
+                queries.deleteTask(taskId)
+            }
+        }
+    }
+
+    override suspend fun getTask(taskId: Long): ScheduleTask? {
+        return withContext(Dispatchers.Default) {
+            queries.selectById(taskId).executeAsOneOrNull()?.toDomain(isCompleted = false)
         }
     }
 

@@ -23,6 +23,7 @@ class ReminderService : Service() {
         const val EXTRA_TASK_START_MINUTES = "extra_task_start_minutes"
         const val EXTRA_TASK_END_MINUTES = "extra_task_end_minutes"
         const val EXTRA_TASK_CATEGORY = "extra_task_category"
+        const val EXTRA_SPEAK = "extra_speak"
 
         private const val NOTIFICATION_ID_BASE = 10000
         private const val SERVICE_TIMEOUT_MS = 15000L
@@ -50,6 +51,7 @@ class ReminderService : Service() {
         val details = intent.getStringExtra(EXTRA_TASK_DETAILS) ?: ""
         val startMinutes = intent.getIntExtra(EXTRA_TASK_START_MINUTES, 0)
         val endMinutes = intent.getIntExtra(EXTRA_TASK_END_MINUTES, 0)
+        val speak = intent.getBooleanExtra(EXTRA_SPEAK, true)
         val categoryName = intent.getStringExtra(EXTRA_TASK_CATEGORY) ?: Category.LEARNING.name
         val category = try {
             Category.valueOf(categoryName)
@@ -126,13 +128,18 @@ class ReminderService : Service() {
         // Arm safety timeout to ensure shortService stops well before the 3-minute Android system limit
         mainHandler.postDelayed(timeoutRunnable, SERVICE_TIMEOUT_MS)
 
-        // Generate speech text and speak
-        val speechText = reminderSpeech(task)
-        speaker = AndroidSpeaker(this) {
-            Log.d("ReminderService", "Speech completed for task '$title'.")
-            finishService()
+        // Speak only when speak is true
+        if (speak) {
+            val speechText = reminderSpeech(task)
+            speaker = AndroidSpeaker(this) {
+                Log.d("ReminderService", "Speech completed for task '$title'.")
+                finishService()
+            }
+            speaker?.speak(speechText)
+        } else {
+            Log.d("ReminderService", "Speech disabled for task '$title'. Skipping speech.")
+            mainHandler.postDelayed({ finishService() }, 1000L)
         }
-        speaker?.speak(speechText)
 
         return START_NOT_STICKY
     }

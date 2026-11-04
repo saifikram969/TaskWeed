@@ -5,8 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.saif.scheduleapp.domain.model.Category
+import com.saif.scheduleapp.core.util.TimeUtils
 import com.saif.scheduleapp.domain.model.ScheduleTask
+import com.saif.scheduleapp.domain.platform.ReminderScheduler
+import com.saif.scheduleapp.domain.repository.ScheduleRepository
+import com.saif.scheduleapp.domain.usecase.DecideReminder
+import com.saif.scheduleapp.domain.usecase.TriggerDecision
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import org.koin.mp.KoinPlatform
 
 class ReminderReceiver : BroadcastReceiver() {
 
@@ -22,27 +31,70 @@ class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
-        val title = intent.getStringExtra(EXTRA_TASK_TITLE) ?: ""
-        val details = intent.getStringExtra(EXTRA_TASK_DETAILS) ?: ""
-        val startMinutes = intent.getIntExtra(EXTRA_TASK_START_MINUTES, 0)
-        val endMinutes = intent.getIntExtra(EXTRA_TASK_END_MINUTES, 0)
-        val categoryName = intent.getStringExtra(EXTRA_TASK_CATEGORY) ?: Category.LEARNING.name
-        val category = try {
-            Category.valueOf(categoryName)
-        } catch (_: Exception) {
-            Category.LEARNING
+        if (taskId <= 0) {
+            Log.w("ReminderReceiver", "Received trigger with invalid task ID: $taskId; ignoring.")
+            return
         }
 
-        Log.d("ReminderReceiver", "Alarm fired for task ID $taskId: '$title'")
+        Log.d("ReminderReceiver", "Alarm fired for task ID $taskId. Invoking goAsync().")
+        val pendingResult = goAsync()
 
-        // 1. Start foreground ReminderService to post high-priority notification and speak
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val koin = KoinPlatform.getKoinOrNull()
+                val repository = koin?.getOrNull<ScheduleRepository>()
+                val decideReminder = koin?.getOrNull<DecideReminder>() ?: DecideReminder()
+                val scheduler = koin?.getOrNull<ReminderScheduler>() ?: AndroidReminderScheduler(context)
+
+                if (repository == null) {
+                    Log.e("ReminderReceiver", "ScheduleRepository unavailable from Koin.")
+                    return@launch
+                }
+
+                // Look up task
+                val task = repository.getTask(taskId)
+                if (task == null) {
+                    Log.d("ReminderReceiver", "Task ID $taskId not found or deleted; skipping notification and rescheduling.")
+                    return@launch
+                }
+
+                val today = TimeUtils.nowLocalDateTime().date
+                val isDoneToday = repository.observeTasks(today)
+                    .first()
+                    .find { it.id == taskId }
+                    ?.isDone ?: false
+
+                // Decide whether to notify or skip
+                when (val decision = decideReminder.decideOnTrigger(task, today, isDoneToday)) {
+                    is TriggerDecision.Notify -> {
+                        Log.d("ReminderReceiver", "Decision: Notify (speak=${decision.speak}) for task ID $taskId")
+                        startReminderService(context, decision.task, decision.speak)
+                    }
+                    is TriggerDecision.Skip -> {
+                        Log.d("ReminderReceiver", "Decision: Skip for task ID $taskId (inactive today or already completed)")
+                    }
+                }
+
+                // Schedule next occurrence after processing, unless the task was deleted
+                scheduler.schedule(task)
+                Log.d("ReminderReceiver", "Rescheduled next occurrence for task ID $taskId")
+            } catch (e: Exception) {
+                Log.e("ReminderReceiver", "Error processing reminder for task ID $taskId: ${e.message}", e)
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    private fun startReminderService(context: Context, task: ScheduleTask, speak: Boolean) {
         val serviceIntent = Intent(context, ReminderService::class.java).apply {
-            putExtra(ReminderService.EXTRA_TASK_ID, taskId)
-            putExtra(ReminderService.EXTRA_TASK_TITLE, title)
-            putExtra(ReminderService.EXTRA_TASK_DETAILS, details)
-            putExtra(ReminderService.EXTRA_TASK_START_MINUTES, startMinutes)
-            putExtra(ReminderService.EXTRA_TASK_END_MINUTES, endMinutes)
-            putExtra(ReminderService.EXTRA_TASK_CATEGORY, category.name)
+            putExtra(ReminderService.EXTRA_TASK_ID, task.id)
+            putExtra(ReminderService.EXTRA_TASK_TITLE, task.title)
+            putExtra(ReminderService.EXTRA_TASK_DETAILS, task.details)
+            putExtra(ReminderService.EXTRA_TASK_START_MINUTES, task.startMinutes)
+            putExtra(ReminderService.EXTRA_TASK_END_MINUTES, task.endMinutes)
+            putExtra(ReminderService.EXTRA_TASK_CATEGORY, task.category.name)
+            putExtra(ReminderService.EXTRA_SPEAK, speak)
         }
 
         try {
@@ -54,21 +106,5 @@ class ReminderReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             Log.e("ReminderReceiver", "Failed to start ReminderService: ${e.message}", e)
         }
-
-        // 2. Schedule the same task for the next day
-        if (taskId > 0) {
-            val task = ScheduleTask(
-                id = taskId,
-                title = title,
-                details = details,
-                startMinutes = startMinutes,
-                endMinutes = endMinutes,
-                category = category
-            )
-            val scheduler = AndroidReminderScheduler(context)
-            scheduler.schedule(task)
-            Log.d("ReminderReceiver", "Rescheduled task ID $taskId for next day.")
-        }
     }
 }
-

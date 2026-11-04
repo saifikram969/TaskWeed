@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data object HomeRoute
 
 @Serializable
-data object AddTaskRoute
+data class TaskFormRoute(val taskId: Long? = null)
 
 @Serializable
 data object ImportRoute

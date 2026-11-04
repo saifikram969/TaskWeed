@@ -1,6 +1,7 @@
 package com.saif.scheduleapp.domain.usecase
 
 import com.saif.scheduleapp.domain.model.ScheduleTask
+import kotlinx.datetime.DayOfWeek
 
 class ImportTasks(
     private val addTask: AddTask,
@@ -15,7 +16,11 @@ class ImportTasks(
         }
         var count = 0
         for (task in tasks) {
-            val result = addTask(task)
+            val taskToImport = task.copy(
+                repeatDays = DayOfWeek.entries.toSet(),
+                voiceEnabled = true
+            )
+            val result = addTask(taskToImport)
             if (result.isSuccess) {
                 count++
             }
@@ -23,4 +28,3 @@ class ImportTasks(
         return Result.success(count)
     }
 }
-

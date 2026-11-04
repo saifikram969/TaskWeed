@@ -16,9 +16,14 @@ class GetTodayTasks(
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(): Flow<List<ScheduleTask>> {
         return dateFlow.flatMapLatest { date ->
-            repository.observeTasks(date).map { tasks ->
-                tasks.sortedBy { it.startMinutes }
-            }
+            invoke(date)
+        }
+    }
+
+    operator fun invoke(date: LocalDate): Flow<List<ScheduleTask>> {
+        return repository.observeTasks(date).map { tasks ->
+            tasks.filter { it.isActiveOn(date) }
+                .sortedBy { it.startMinutes }
         }
     }
 }

@@ -73,5 +73,36 @@ class ImportTasksTest {
         assertEquals("Imported 1", all[0].title)
         assertTrue(scheduler.cancelled.contains(existingId))
     }
+
+    @Test
+    fun testImportedTasksHaveAllSevenDaysAndVoiceEnabled() = runTest {
+        val repository = InMemoryScheduleRepository(initialTasks = emptyList())
+        val scheduler = RecordingReminderScheduler()
+        val addTask = AddTask(repository, scheduler)
+        val clearAllTasks = ClearAllTasks(repository, scheduler)
+        val importTasks = ImportTasks(addTask, clearAllTasks)
+
+        val taskWithCustomSettings = ScheduleTask(
+            id = 0L,
+            title = "Custom Task",
+            details = "",
+            startMinutes = 500,
+            endMinutes = 600,
+            category = Category.LEARNING,
+            repeatDays = setOf(kotlinx.datetime.DayOfWeek.MONDAY),
+            voiceEnabled = false
+        )
+
+        val result = importTasks(listOf(taskWithCustomSettings), replaceExisting = false)
+        assertTrue(result.isSuccess)
+
+        val saved = repository.getAllTasks().first()
+        assertEquals(kotlinx.datetime.DayOfWeek.entries.toSet(), saved.repeatDays)
+        assertTrue(saved.voiceEnabled)
+
+        val scheduled = scheduler.scheduled.first()
+        assertEquals(kotlinx.datetime.DayOfWeek.entries.toSet(), scheduled.repeatDays)
+        assertTrue(scheduled.voiceEnabled)
+    }
 }
 

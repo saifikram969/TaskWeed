@@ -52,6 +52,17 @@
             </intent-filter>
         </receiver>
 
+        <!-- BroadcastReceiver for time-zone, time, and date changes -->
+        <receiver
+            android:name="com.saif.scheduleapp.reminder.TimeChangedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Foreground Service for displaying reminder notifications & TTS -->
         <service
             android:name="com.saif.scheduleapp.reminder.ReminderService"

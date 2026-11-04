@@ -25,10 +25,17 @@ class AndroidReminderScheduler(
             return
         }
 
+        if (task.repeatDays.isEmpty()) {
+            Log.w("AndroidReminderScheduler", "Task ${task.id} has no repeatDays. Cancelling any alarm.")
+            cancel(task.id)
+            return
+        }
+
         val now = TimeUtils.nowLocalDateTime()
         val zone = TimeZone.currentSystemDefault()
         val triggerMillis = nextTriggerMillis(
             startMinutes = task.startMinutes,
+            repeatDays = task.repeatDays,
             now = now,
             zone = zone
         )
