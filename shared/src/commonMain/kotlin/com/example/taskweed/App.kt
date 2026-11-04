@@ -1,7 +1,7 @@
 package com.example.taskweed
 
 import androidx.compose.runtime.Composable
-import com.saif.scheduleapp.core.designsystem.ScheduleAppTheme
+import com.saif.scheduleapp.core.designsystem.ScheduleTheme
 import com.saif.scheduleapp.core.di.appModule
 import com.saif.scheduleapp.core.di.platformModule
 import com.saif.scheduleapp.presentation.navigation.AppNavHost
@@ -15,13 +15,13 @@ fun App() {
         KoinApplication(application = {
             modules(appModule, platformModule)
         }) {
-            ScheduleAppTheme {
+            ScheduleTheme {
                 AppNavHost()
             }
         }
     } else {
         KoinContext {
-            ScheduleAppTheme {
+            ScheduleTheme {
                 AppNavHost()
             }
         }

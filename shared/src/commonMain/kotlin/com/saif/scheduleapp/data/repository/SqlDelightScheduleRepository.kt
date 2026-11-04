@@ -14,13 +14,41 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 class SqlDelightScheduleRepository(
     private val database: ScheduleDatabase
 ) : ScheduleRepository {
 
     private val queries = database.scheduleTaskQueries
+
+    override fun observeAllTasks(): Flow<List<ScheduleTask>> {
+        return queries.selectAll()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { tasks -> tasks.map { it.toDomain(isCompleted = false) } }
+    }
+
+    override fun observeCompletions(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, Set<Long>>> {
+        return queries.selectCompletionsBetweenDates(fromDate = from.toString(), toDate = to.toString())
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { list ->
+                val result = mutableMapOf<LocalDate, MutableSet<Long>>()
+                var d = from
+                while (d <= to) {
+                    result[d] = mutableSetOf()
+                    d = d.plus(1, DateTimeUnit.DAY)
+                }
+                for (row in list) {
+                    val date = LocalDate.parse(row.date)
+                    result.getOrPut(date) { mutableSetOf() }.add(row.taskId)
+                }
+                result.mapValues { it.value.toSet() }
+            }
+    }
 
     override fun observeTasks(date: LocalDate): Flow<List<ScheduleTask>> {
         val tasksFlow = queries.selectAll()

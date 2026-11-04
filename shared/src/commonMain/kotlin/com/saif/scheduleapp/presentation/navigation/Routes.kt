@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 data object HomeRoute
 
 @Serializable
+data object StatsRoute
+
+@Serializable
 data class TaskFormRoute(val taskId: Long? = null)
 
 @Serializable

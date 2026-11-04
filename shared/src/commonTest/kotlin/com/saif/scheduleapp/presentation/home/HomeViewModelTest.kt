@@ -177,5 +177,42 @@ class HomeViewModelTest {
 
         job.cancel()
     }
-}
 
+    @Test
+    fun testGreetingsByTimeOfDay() {
+        assertEquals("Good morning", HomeViewModel.getGreeting(0))
+        assertEquals("Good morning", HomeViewModel.getGreeting(500))
+        assertEquals("Good morning", HomeViewModel.getGreeting(719))
+
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(720))
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(850))
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(1019))
+
+        assertEquals("Good evening", HomeViewModel.getGreeting(1020))
+        assertEquals("Good evening", HomeViewModel.getGreeting(1200))
+        assertEquals("Good evening", HomeViewModel.getGreeting(1439))
+    }
+
+    @Test
+    fun testNowProgressAndRemainingMinutesCalculated() {
+        // Task 2: 600..660 (duration 60). At 630, progress is 30/60 = 0.5f, remaining is 30.
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630)
+        assertEquals(2L, state.nowTask?.id)
+        assertEquals(0.5f, state.nowProgress)
+        assertEquals(30, state.nowRemainingMinutes)
+    }
+
+    @Test
+    fun testDoneTasksListSeparated() {
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630)
+        assertEquals(1, state.doneTasks.size)
+        assertEquals(1L, state.doneTasks.first().id)
+        assertEquals(true, state.doneTasks.first().isDone)
+    }
+
+    @Test
+    fun testCurrentStreakPopulated() {
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630, currentStreak = 7)
+        assertEquals(7, state.currentStreak)
+    }
+}

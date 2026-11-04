@@ -8,6 +8,11 @@ import kotlinx.datetime.LocalDate
 interface ScheduleRepository {
     fun observeTasks(date: LocalDate): Flow<List<ScheduleTask>>
 
+    fun observeAllTasks(): Flow<List<ScheduleTask>> = observeTasks()
+
+    fun observeCompletions(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, Set<Long>>> =
+        kotlinx.coroutines.flow.flowOf(emptyMap())
+
     fun observeTasks(): Flow<List<ScheduleTask>> =
         observeTasks(TimeUtils.nowLocalDateTime().date)
 
