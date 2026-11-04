@@ -132,6 +132,27 @@ class AddTaskTest {
     }
 
     @Test
+    fun testEmptyRepeatDays() = kotlinx.coroutines.test.runTest {
+        val fakeRepo = FakeScheduleRepository()
+        val addTask = AddTask(fakeRepo)
+        val task = ScheduleTask(
+            id = 0L,
+            title = "Valid Title",
+            details = "Details",
+            startMinutes = 540,
+            endMinutes = 600,
+            category = Category.LEARNING,
+            repeatDays = emptySet()
+        )
+
+        val result = addTask(task)
+
+        assertTrue(result.isFailure)
+        assertEquals("Pick at least one day.", result.exceptionOrNull()?.message)
+        assertTrue(fakeRepo.tasks.isEmpty())
+    }
+
+    @Test
     fun testValidTask() = kotlinx.coroutines.test.runTest {
         val fakeRepo = FakeScheduleRepository()
         val addTask = AddTask(fakeRepo)

@@ -32,20 +32,24 @@ class IosNotificationDelegate(
         val content = willPresentNotification.request.content
         val title = content.title
         val body = content.body
+        val hasSound = content.sound != null
 
-        // Synthesize and speak the task reminder since the app is open
-        val speechText = if (body.isNotBlank()) {
-            "Time for $title. $body"
-        } else {
-            "Time for $title"
+        // Synthesize and speak the task reminder only if voice/sound is enabled
+        if (hasSound) {
+            val speechText = if (body.isNotBlank()) {
+                "Time for $title. $body"
+            } else {
+                "Time for $title"
+            }
+            speaker.speak(speechText)
         }
-        speaker.speak(speechText)
 
-        // Show a notification banner, play sound, and update badge while the app is open
-        val options: UNNotificationPresentationOptions =
-            UNNotificationPresentationOptionBanner or
-            UNNotificationPresentationOptionSound or
-            UNNotificationPresentationOptionBadge
+        // Show a notification banner, play sound (if enabled), and update badge while the app is open
+        var options: UNNotificationPresentationOptions =
+            UNNotificationPresentationOptionBanner or UNNotificationPresentationOptionBadge
+        if (hasSound) {
+            options = options or UNNotificationPresentationOptionSound
+        }
 
         withCompletionHandler(options)
     }
@@ -58,4 +62,3 @@ class IosNotificationDelegate(
         withCompletionHandler()
     }
 }
-

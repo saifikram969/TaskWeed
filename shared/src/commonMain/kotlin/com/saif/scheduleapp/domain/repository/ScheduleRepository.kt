@@ -24,6 +24,12 @@ interface ScheduleRepository {
 
     suspend fun addTask(task: ScheduleTask): Long
 
+    suspend fun updateTask(task: ScheduleTask) {}
+
+    suspend fun deleteTask(taskId: Long) {}
+
+    suspend fun getTask(taskId: Long): ScheduleTask? = null
+
     suspend fun clearAllTasks()
 
     suspend fun getAllTasks(): List<ScheduleTask>

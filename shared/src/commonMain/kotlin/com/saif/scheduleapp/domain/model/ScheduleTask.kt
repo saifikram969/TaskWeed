@@ -1,5 +1,8 @@
 package com.saif.scheduleapp.domain.model
 
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+
 enum class Category {
     LEARNING,
     JOBS,
@@ -14,5 +17,11 @@ data class ScheduleTask(
     val startMinutes: Int,
     val endMinutes: Int,
     val category: Category,
-    val isDone: Boolean = false
-)
+    val isDone: Boolean = false,
+    val repeatDays: Set<DayOfWeek> = DayOfWeek.entries.toSet(),
+    val voiceEnabled: Boolean = true
+) {
+    fun isActiveOn(date: LocalDate): Boolean {
+        return date.dayOfWeek in repeatDays
+    }
+}

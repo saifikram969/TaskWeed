@@ -10,7 +10,7 @@ import com.saif.scheduleapp.domain.platform.ReminderScheduler
 class WebReminderScheduler : ReminderScheduler {
 
     override fun schedule(task: ScheduleTask) {
-        println("[WebReminderScheduler] Scheduled reminder for task '${task.title}' (ID: ${task.id}) at ${task.startMinutes} mins")
+        println("[WebReminderScheduler] Scheduled reminder for task '${task.title}' (ID: ${task.id}) at ${task.startMinutes} mins, repeatDays=${task.repeatDays}, voiceEnabled=${task.voiceEnabled}")
     }
 
     override fun cancel(taskId: Long) {

@@ -2,14 +2,18 @@ package com.saif.scheduleapp.core.di
 
 import com.saif.scheduleapp.domain.usecase.AddTask
 import com.saif.scheduleapp.domain.usecase.ClearAllTasks
+import com.saif.scheduleapp.domain.usecase.DecideReminder
+import com.saif.scheduleapp.domain.usecase.DeleteTask
+import com.saif.scheduleapp.domain.usecase.GetTask
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
 import com.saif.scheduleapp.domain.usecase.ImportTasks
 import com.saif.scheduleapp.domain.usecase.MarkTaskDone
 import com.saif.scheduleapp.domain.usecase.RescheduleAllReminders
-import com.saif.scheduleapp.presentation.addtask.AddTaskViewModel
+import com.saif.scheduleapp.domain.usecase.UpdateTask
 import com.saif.scheduleapp.presentation.home.HomeViewModel
 import com.saif.scheduleapp.presentation.importschedule.ImportViewModel
 import com.saif.scheduleapp.presentation.reminder.ReminderViewModel
+import com.saif.scheduleapp.presentation.taskform.TaskFormViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
@@ -26,6 +30,10 @@ val appModule: Module = module {
     factory { RescheduleAllReminders(repository = get(), scheduler = get()) }
     factory { ClearAllTasks(repository = get(), scheduler = get()) }
     factory { ImportTasks(addTask = get(), clearAllTasks = get()) }
+    factory { DecideReminder() }
+    factory { GetTask(repository = get()) }
+    factory { UpdateTask(repository = get(), scheduler = get(), decideReminder = get()) }
+    factory { DeleteTask(repository = get(), scheduler = get(), decideReminder = get()) }
 
     // Presentation ViewModels
     factory {
@@ -35,9 +43,13 @@ val appModule: Module = module {
             pdfReader = getOrNull()
         )
     }
-    factory {
-        AddTaskViewModel(
-            addTask = get()
+    factory { params ->
+        TaskFormViewModel(
+            getTask = get(),
+            addTask = get(),
+            updateTask = get(),
+            deleteTask = get(),
+            taskId = params.getOrNull<Long>()
         )
     }
     factory {

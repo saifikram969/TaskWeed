@@ -9,16 +9,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.saif.scheduleapp.core.designsystem.ScheduleAppTheme
-import com.saif.scheduleapp.presentation.addtask.AddTaskScreen
-import com.saif.scheduleapp.presentation.addtask.AddTaskViewModel
 import com.saif.scheduleapp.presentation.home.HomeScreen
 import com.saif.scheduleapp.presentation.home.HomeViewModel
 import com.saif.scheduleapp.presentation.importschedule.ImportScreen
 import com.saif.scheduleapp.presentation.importschedule.ImportStage
 import com.saif.scheduleapp.presentation.importschedule.ImportViewModel
+import com.saif.scheduleapp.presentation.taskform.TaskFormScreen
+import com.saif.scheduleapp.presentation.taskform.TaskFormViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AppNavHost(
@@ -37,7 +39,10 @@ fun AppNavHost(
                 state = state,
                 onToggleTask = viewModel::onToggleTaskDone,
                 onNavigateToAddTask = {
-                    navController.navigate(AddTaskRoute)
+                    navController.navigate(TaskFormRoute())
+                },
+                onNavigateToEditTask = { taskId ->
+                    navController.navigate(TaskFormRoute(taskId = taskId))
                 },
                 onNavigateToImport = {
                     navController.navigate(ImportRoute)
@@ -45,24 +50,29 @@ fun AppNavHost(
             )
         }
 
-        composable<AddTaskRoute> {
-            val viewModel: AddTaskViewModel = koinInject()
+        composable<TaskFormRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<TaskFormRoute>()
+            val viewModel: TaskFormViewModel = koinInject { parametersOf(route.taskId) }
             val state by viewModel.uiState.collectAsState()
 
-            LaunchedEffect(state.saved) {
-                if (state.saved) {
+            LaunchedEffect(state.saved, state.deleted) {
+                if (state.saved || state.deleted) {
                     navController.popBackStack()
                 }
             }
 
-            AddTaskScreen(
+            TaskFormScreen(
                 state = state,
                 onTitleChange = viewModel::onTitleChange,
                 onDetailsChange = viewModel::onDetailsChange,
                 onStartChange = viewModel::onStartChange,
                 onEndChange = viewModel::onEndChange,
                 onCategoryChange = viewModel::onCategoryChange,
+                onDayToggle = viewModel::onDayToggle,
+                onSetRepeatDays = viewModel::onSetRepeatDays,
+                onVoiceEnabledChange = viewModel::onVoiceEnabledChange,
                 onSaveClick = viewModel::onSaveClick,
+                onDeleteClick = viewModel::onDeleteClick,
                 onBack = {
                     navController.popBackStack()
                 }
@@ -101,4 +111,3 @@ fun AppNavHostPreview() {
         AppNavHost()
     }
 }
-

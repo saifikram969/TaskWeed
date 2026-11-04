@@ -52,6 +52,32 @@ class InMemoryScheduleRepository(
         return generatedId
     }
 
+    override suspend fun updateTask(task: ScheduleTask) {
+        _tasks.update { currentTasks ->
+            val index = currentTasks.indexOfFirst { it.id == task.id }
+            if (index != -1) {
+                val updated = currentTasks.toMutableList()
+                updated[index] = task.copy(isDone = false)
+                updated.sortedBy { it.startMinutes }
+            } else {
+                currentTasks
+            }
+        }
+    }
+
+    override suspend fun deleteTask(taskId: Long) {
+        _tasks.update { currentTasks ->
+            currentTasks.filterNot { it.id == taskId }
+        }
+        _completedTasks.update { currentMap ->
+            currentMap.mapValues { (_, taskIds) -> taskIds - taskId }
+        }
+    }
+
+    override suspend fun getTask(taskId: Long): ScheduleTask? {
+        return _tasks.value.find { it.id == taskId }?.copy(isDone = false)
+    }
+
     override suspend fun clearAllTasks() {
         _tasks.value = emptyList()
         _completedTasks.value = emptyMap()

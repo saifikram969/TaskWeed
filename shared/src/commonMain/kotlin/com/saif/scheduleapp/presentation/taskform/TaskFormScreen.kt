@@ -1,4 +1,4 @@
-package com.saif.scheduleapp.presentation.addtask
+package com.saif.scheduleapp.presentation.taskform
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +27,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -57,22 +59,36 @@ import com.saif.scheduleapp.core.designsystem.CategoryPrayer
 import com.saif.scheduleapp.core.designsystem.CategoryRest
 import com.saif.scheduleapp.core.util.formatTime
 import com.saif.scheduleapp.domain.model.Category
+import kotlinx.datetime.DayOfWeek
+
+private val WEEKDAYS = setOf(
+    DayOfWeek.MONDAY,
+    DayOfWeek.TUESDAY,
+    DayOfWeek.WEDNESDAY,
+    DayOfWeek.THURSDAY,
+    DayOfWeek.FRIDAY
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTaskScreen(
-    state: AddTaskUiState,
+fun TaskFormScreen(
+    state: TaskFormUiState,
     onTitleChange: (String) -> Unit,
     onDetailsChange: (String) -> Unit,
     onStartChange: (Int) -> Unit,
     onEndChange: (Int) -> Unit,
     onCategoryChange: (Category) -> Unit,
+    onDayToggle: (DayOfWeek) -> Unit,
+    onSetRepeatDays: (Set<DayOfWeek>) -> Unit,
+    onVoiceEnabledChange: (Boolean) -> Unit,
     onSaveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -118,7 +134,7 @@ fun AddTaskScreen(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
-                        text = "Add task",
+                        text = if (state.isEditMode) "Edit task" else "Add task",
                         color = AppTextMain,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
@@ -254,6 +270,92 @@ fun AddTaskScreen(
                     }
                 }
 
+                // Repeat Days Section (Monday first + Shortcuts)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Repeat Days",
+                            color = AppTextMuted,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        // Shortcuts: Every day & Weekdays
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(AppCardBackground)
+                                    .border(1.dp, AppCardBorder, RoundedCornerShape(8.dp))
+                                    .clickable { onSetRepeatDays(DayOfWeek.entries.toSet()) }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Every day",
+                                    color = AppPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(AppCardBackground)
+                                    .border(1.dp, AppCardBorder, RoundedCornerShape(8.dp))
+                                    .clickable { onSetRepeatDays(WEEKDAYS) }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Weekdays",
+                                    color = AppPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    // Seven weekday chips, Monday first
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        DayOfWeek.entries.forEach { day ->
+                            val isSelected = day in state.repeatDays
+                            val shortName = day.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) AppPrimaryContainer else AppCardBackground
+                                    )
+                                    .border(
+                                        width = if (isSelected) 1.5.dp else 1.dp,
+                                        color = if (isSelected) AppPrimary else AppCardBorder,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { onDayToggle(day) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = shortName,
+                                    color = if (isSelected) AppPrimary else AppTextMuted,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Category Chips
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -303,6 +405,49 @@ fun AddTaskScreen(
                     }
                 }
 
+                // Speak this reminder switch
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(AppCardBackground)
+                        .border(1.dp, AppCardBorder, RoundedCornerShape(16.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Speak this reminder",
+                                color = AppTextMain,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Voice readout when reminder triggers",
+                                color = AppTextMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        Switch(
+                            checked = state.voiceEnabled,
+                            onCheckedChange = onVoiceEnabledChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = AppPrimary,
+                                uncheckedThumbColor = AppTextMuted,
+                                uncheckedTrackColor = AppCardBackground,
+                                uncheckedBorderColor = AppCardBorder
+                            )
+                        )
+                    }
+                }
+
                 // Error Message Display
                 if (state.error != null) {
                     Box(
@@ -337,13 +482,81 @@ fun AddTaskScreen(
                     )
                 ) {
                     Text(
-                        text = "Save Task",
+                        text = if (state.isEditMode) "Save Changes" else "Save Task",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+                // Delete Button (Shown only in edit mode)
+                if (state.isEditMode) {
+                    Button(
+                        onClick = { showDeleteConfirmDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2D1619),
+                            contentColor = Color(0xFFFF6B6B)
+                        )
+                    ) {
+                        Text(
+                            text = "Delete Task",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF6B6B)
+                        )
+                    }
+                }
             }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Delete Task",
+                    color = AppTextMain,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete this task? This action cannot be undone.",
+                    color = AppTextMuted,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteClick()
+                    }
+                ) {
+                    Text(
+                        text = "Delete",
+                        color = Color(0xFFFF6B6B),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(
+                        text = "Cancel",
+                        color = AppTextMuted
+                    )
+                }
+            },
+            containerColor = AppCardBackground,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     // Start TimePickerDialog
@@ -375,7 +588,7 @@ fun AddTaskScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TimePickerModalDialog(
+fun TimePickerModalDialog(
     title: String,
     initialMinutes: Int,
     onConfirm: (Int) -> Unit,
@@ -449,3 +662,4 @@ internal fun TimePickerModalDialog(
         shape = RoundedCornerShape(16.dp)
     )
 }
+
