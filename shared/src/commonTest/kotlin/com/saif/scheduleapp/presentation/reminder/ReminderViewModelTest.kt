@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -125,5 +126,85 @@ class ReminderViewModelTest {
         assertEquals(10L, scheduler.snoozed.first().first.id)
         assertEquals(5, scheduler.snoozed.first().second)
     }
-}
 
+    @Test
+    fun testSpeakingCountdownForVoiceEnabledTask() = runTest(testDispatcher) {
+        val task = ScheduleTask(
+            id = 20L,
+            title = "Meeting",
+            details = "Standup",
+            startMinutes = 540,
+            endMinutes = 570,
+            category = Category.JOBS,
+            voiceEnabled = true
+        )
+        val repo = FakeScheduleRepository(listOf(task))
+        val scheduler = FakeReminderScheduler()
+        val viewModel = ReminderViewModel(repo, scheduler, testDispatcher)
+
+        viewModel.setTask(task)
+        testScheduler.advanceTimeBy(100)
+
+        // isSpeaking should be true during initial 8 seconds
+        assertTrue(viewModel.uiState.value.isSpeaking)
+
+        // Advance just before 8000 ms
+        testScheduler.advanceTimeBy(7800)
+        assertTrue(viewModel.uiState.value.isSpeaking)
+
+        // Advance past 8000 ms
+        testScheduler.advanceTimeBy(200)
+        assertFalse(viewModel.uiState.value.isSpeaking)
+    }
+
+    @Test
+    fun testSpeakingDisabledTaskDoesNotSpeak() = runTest(testDispatcher) {
+        val task = ScheduleTask(
+            id = 21L,
+            title = "Silent Prayer",
+            details = "Quiet meditation",
+            startMinutes = 300,
+            endMinutes = 330,
+            category = Category.PRAYER,
+            voiceEnabled = false
+        )
+        val repo = FakeScheduleRepository(listOf(task))
+        val scheduler = FakeReminderScheduler()
+        val viewModel = ReminderViewModel(repo, scheduler, testDispatcher)
+
+        viewModel.setTask(task)
+        testScheduler.advanceTimeBy(100)
+
+        assertFalse(viewModel.uiState.value.isSpeaking)
+
+        testScheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isSpeaking)
+    }
+
+    @Test
+    fun testSetSpeakingManualOverride() = runTest(testDispatcher) {
+        val task = ScheduleTask(
+            id = 22L,
+            title = "Study Session",
+            details = "Read chapter 3",
+            startMinutes = 600,
+            endMinutes = 660,
+            category = Category.LEARNING,
+            voiceEnabled = true
+        )
+        val repo = FakeScheduleRepository(listOf(task))
+        val scheduler = FakeReminderScheduler()
+        val viewModel = ReminderViewModel(repo, scheduler, testDispatcher)
+
+        viewModel.setTask(task)
+        testScheduler.advanceTimeBy(100)
+        assertTrue(viewModel.uiState.value.isSpeaking)
+
+        // Manually turn off speaking
+        viewModel.setSpeaking(false)
+        assertFalse(viewModel.uiState.value.isSpeaking)
+
+        testScheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isSpeaking)
+    }
+}

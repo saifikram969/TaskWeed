@@ -1,5 +1,7 @@
 package com.saif.scheduleapp.core.di
 
+import com.saif.scheduleapp.core.platform.Haptics
+import com.saif.scheduleapp.core.platform.IosHaptics
 import com.saif.scheduleapp.data.local.DatabaseDriverFactory
 import com.saif.scheduleapp.data.repository.SqlDelightScheduleRepository
 import com.saif.scheduleapp.db.ScheduleDatabase
@@ -19,6 +21,7 @@ actual val platformModule: Module = module {
     single { IosNotificationDelegate(speaker = get()) }
     single<ReminderScheduler> { IosReminderScheduler(delegate = get()) }
     single<PdfReader> { IosPdfReader() }
+    single<Haptics> { IosHaptics() }
 
     single { DatabaseDriverFactory() }
     single { ScheduleDatabase(driver = get<DatabaseDriverFactory>().create()) }

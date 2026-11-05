@@ -1,6 +1,8 @@
 package com.saif.scheduleapp.core.di
 
 import android.content.Context
+import com.saif.scheduleapp.core.platform.AndroidHaptics
+import com.saif.scheduleapp.core.platform.Haptics
 import com.saif.scheduleapp.data.local.DatabaseDriverFactory
 import com.saif.scheduleapp.data.repository.SqlDelightScheduleRepository
 import com.saif.scheduleapp.db.ScheduleDatabase
@@ -41,6 +43,17 @@ actual val platformModule: Module = module {
     }
 
     single<PdfReader> { AndroidPdfReader() }
+   // Do we really need this fallback, or should Context always be provided through Koin?
+    single<Haptics> {
+        val context = getOrNull<Context>()
+        if (context != null) {
+            AndroidHaptics(context = context)
+        } else {
+            object : Haptics {
+                override fun tick() {}
+            }
+        }
+    }
 
     single {
         val context = getOrNull<Context>()

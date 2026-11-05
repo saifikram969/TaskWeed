@@ -65,7 +65,8 @@ class ReminderService : Service() {
             details = details,
             startMinutes = startMinutes,
             endMinutes = endMinutes,
-            category = category
+            category = category,
+            voiceEnabled = speak
         )
 
         // Ensure notification channel exists
@@ -83,6 +84,7 @@ class ReminderService : Service() {
             putExtra(EXTRA_TASK_START_MINUTES, startMinutes)
             putExtra(EXTRA_TASK_END_MINUTES, endMinutes)
             putExtra(EXTRA_TASK_CATEGORY, categoryName)
+            putExtra(EXTRA_SPEAK, speak)
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
@@ -173,4 +175,3 @@ class ReminderService : Service() {
         super.onDestroy()
     }
 }
-

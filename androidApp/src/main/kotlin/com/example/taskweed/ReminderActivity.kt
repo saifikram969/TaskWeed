@@ -9,7 +9,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.saif.scheduleapp.core.designsystem.ScheduleAppTheme
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import com.saif.scheduleapp.core.designsystem.ScheduleTheme
 import com.saif.scheduleapp.core.di.initKoin
 import com.saif.scheduleapp.domain.model.Category
 import com.saif.scheduleapp.domain.model.ScheduleTask
@@ -52,6 +54,7 @@ class ReminderActivity : ComponentActivity() {
         val details = intent.getStringExtra(ReminderService.EXTRA_TASK_DETAILS).orEmpty()
         val startMinutes = intent.getIntExtra(ReminderService.EXTRA_TASK_START_MINUTES, 0)
         val endMinutes = intent.getIntExtra(ReminderService.EXTRA_TASK_END_MINUTES, 0)
+        val speak = intent.getBooleanExtra(ReminderService.EXTRA_SPEAK, true)
         val categoryName = intent.getStringExtra(ReminderService.EXTRA_TASK_CATEGORY) ?: Category.LEARNING.name
         val category = try {
             Category.valueOf(categoryName)
@@ -59,7 +62,7 @@ class ReminderActivity : ComponentActivity() {
             Category.LEARNING
         }
 
-        Log.d("ReminderActivity", "onCreate: taskId=$taskId, title='$title'")
+        Log.d("ReminderActivity", "onCreate: taskId=$taskId, title='$title', speak=$speak")
 
         val viewModel: ReminderViewModel = get()
 
@@ -70,17 +73,23 @@ class ReminderActivity : ComponentActivity() {
                 details = details,
                 startMinutes = startMinutes,
                 endMinutes = endMinutes,
-                category = category
+                category = category,
+                voiceEnabled = speak
             )
             viewModel.setTask(taskFromExtras)
             viewModel.loadTask(taskId)
         }
 
         setContent {
-            ScheduleAppTheme {
+            ScheduleTheme {
                 val state by viewModel.uiState.collectAsState()
+                val lifecycleOwner = LocalLifecycleOwner.current
+                val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
+                val isVisible = lifecycleState.isAtLeast(Lifecycle.State.STARTED)
+
                 ReminderScreen(
                     state = state,
+                    isScreenVisible = isVisible,
                     onStartNow = {
                         Log.d("ReminderActivity", "onStartNow triggered - finishing activity")
                         viewModel.onStartNow {
