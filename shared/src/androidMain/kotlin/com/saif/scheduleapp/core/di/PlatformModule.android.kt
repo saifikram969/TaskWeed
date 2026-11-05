@@ -43,7 +43,7 @@ actual val platformModule: Module = module {
     }
 
     single<PdfReader> { AndroidPdfReader() }
-
+   // Do we really need this fallback, or should Context always be provided through Koin?
     single<Haptics> {
         val context = getOrNull<Context>()
         if (context != null) {
