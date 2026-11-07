@@ -26,20 +26,24 @@ class ReminderViewModel(
 
     private var speakingJob: Job? = null
 
-    fun loadTask(taskId: Long) {
+    fun loadTask(taskId: Long, triggerCountdown: Boolean = true) {
         viewModelScope.launch(dispatcher) {
             val tasks = repository.getAllTasks()
             val matchedTask = tasks.find { it.id == taskId }
             if (matchedTask != null) {
                 _uiState.update { it.copy(task = matchedTask) }
-                triggerSpeakingCountdown(matchedTask.voiceEnabled)
+                if (triggerCountdown) {
+                    triggerSpeakingCountdown(matchedTask.voiceEnabled)
+                }
             }
         }
     }
 
-    fun setTask(task: ScheduleTask) {
+    fun setTask(task: ScheduleTask, triggerCountdown: Boolean = true) {
         _uiState.update { it.copy(task = task) }
-        triggerSpeakingCountdown(task.voiceEnabled)
+        if (triggerCountdown) {
+            triggerSpeakingCountdown(task.voiceEnabled)
+        }
     }
 
     fun setSpeaking(speaking: Boolean) {

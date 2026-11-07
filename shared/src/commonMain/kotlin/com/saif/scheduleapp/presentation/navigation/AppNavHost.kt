@@ -141,6 +141,8 @@ fun AppNavHost(
                 HomeScreen(
                     state = state,
                     onToggleTask = viewModel::onToggleTaskDone,
+                    onTabSelected = viewModel::onTabSelected,
+                    onCompleteMissedTask = { task -> viewModel.onCompleteMissedTask(task) },
                     onNavigateToAddTask = {
                         navController.navigate(TaskFormRoute())
                     },

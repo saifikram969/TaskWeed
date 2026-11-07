@@ -4,6 +4,7 @@ import com.saif.scheduleapp.domain.usecase.AddTask
 import com.saif.scheduleapp.domain.usecase.ClearAllTasks
 import com.saif.scheduleapp.domain.usecase.DecideReminder
 import com.saif.scheduleapp.domain.usecase.DeleteTask
+import com.saif.scheduleapp.domain.usecase.GetMissedTasks
 import com.saif.scheduleapp.domain.usecase.GetStats
 import com.saif.scheduleapp.domain.usecase.GetTask
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
@@ -37,13 +38,15 @@ val appModule: Module = module {
     factory { UpdateTask(repository = get(), scheduler = get(), decideReminder = get()) }
     factory { DeleteTask(repository = get(), scheduler = get(), decideReminder = get()) }
     factory { GetStats(repository = get()) }
+    factory { GetMissedTasks(repository = get()) }
 
     // Presentation ViewModels
-    factory {
+    single {
         HomeViewModel(
             getTodayTasks = get(),
             markTaskDone = get(),
             getStats = get(),
+            getMissedTasks = get(),
             pdfReader = getOrNull()
         )
     }
@@ -68,7 +71,7 @@ val appModule: Module = module {
             importTasks = get()
         )
     }
-    factory {
+    single {
         StatsViewModel(
             getStats = get()
         )

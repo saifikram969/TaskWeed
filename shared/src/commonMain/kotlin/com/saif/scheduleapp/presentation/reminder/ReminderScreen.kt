@@ -67,29 +67,8 @@ fun ReminderScreen(
     val task = state.task
     val voiceEnabled = task?.voiceEnabled == true
 
-    // 8-second speaking countdown for screen opening when voice is enabled
-    var screenOpenedSpeaking by remember(task?.id, voiceEnabled) {
-        mutableStateOf(voiceEnabled)
-    }
-
-    LaunchedEffect(task?.id, voiceEnabled) {
-        if (voiceEnabled) {
-            screenOpenedSpeaking = true
-            delay(8000L)
-            screenOpenedSpeaking = false
-        } else {
-            screenOpenedSpeaking = false
-        }
-    }
-
-    // Stop speaking immediately if state.isSpeaking explicitly turned off
-    LaunchedEffect(state.isSpeaking) {
-        if (!state.isSpeaking && task != null) {
-            screenOpenedSpeaking = false
-        }
-    }
-
-    val isSpeaking = isScreenVisible && voiceEnabled && (state.isSpeaking || screenOpenedSpeaking)
+    // Drive sound-wave animation strictly using actual speech state
+    val isSpeaking = isScreenVisible && voiceEnabled && state.isSpeaking
 
     val timeRange = if (task != null) {
         TimeUtils.formatTimeRange(task.startMinutes, task.endMinutes)

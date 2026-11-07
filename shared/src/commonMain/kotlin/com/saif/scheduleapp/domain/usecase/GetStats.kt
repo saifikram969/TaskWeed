@@ -7,10 +7,12 @@ import com.saif.scheduleapp.domain.progress.Stats
 import com.saif.scheduleapp.domain.progress.currentStreak
 import com.saif.scheduleapp.domain.progress.longestStreak
 import com.saif.scheduleapp.domain.repository.ScheduleRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -23,7 +25,7 @@ class GetStats(
     operator fun invoke(): Flow<Stats> {
         return dateFlow.flatMapLatest { today ->
             invoke(today)
-        }
+        }.flowOn(Dispatchers.Default)
     }
 
     operator fun invoke(today: LocalDate): Flow<Stats> {
@@ -34,7 +36,7 @@ class GetStats(
             repository.observeCompletions(from, to)
         ) { allTasks, completionsMap ->
             computeStats(today, allTasks, completionsMap)
-        }
+        }.flowOn(Dispatchers.Default)
     }
 
     private fun computeStats(

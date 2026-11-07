@@ -54,24 +54,23 @@ fun CategoryIcon(
 @Composable
 fun CategoryTile(
     category: Category,
+    modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onClick: (() -> Unit)? = null
 ) {
     val catColor = categoryColor(category)
-    val displayName = category.name.lowercase().replaceFirstChar { it.uppercase() }
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(8.dp)
 
     val background = if (isSelected) {
-        catColor.copy(alpha = 0.2f)
+        catColor.copy(alpha = 0.25f)
     } else {
-        ScheduleTheme.colors.surface
+        catColor.copy(alpha = 0.15f)
     }
 
     val borderModifier = if (isSelected) {
         Modifier.border(1.dp, catColor, shape)
     } else {
-        Modifier.border(1.dp, ScheduleTheme.colors.surfaceVariant, shape)
+        Modifier.border(1.dp, catColor.copy(alpha = 0.3f), shape)
     }
 
     val clickModifier = if (onClick != null) {
@@ -82,28 +81,18 @@ fun CategoryTile(
 
     Box(
         modifier = modifier
+            .size(32.dp)
             .clip(shape)
             .then(borderModifier)
             .background(background)
-            .then(clickModifier)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .then(clickModifier),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CategoryIcon(
-                category = category,
-                tint = if (isSelected) catColor else ScheduleTheme.colors.textMuted,
-                size = 18.dp
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = displayName,
-                color = if (isSelected) catColor else ScheduleTheme.colors.textMuted,
-                fontSize = 13.sp
-            )
-        }
+        CategoryIcon(
+            category = category,
+            tint = catColor,
+            size = 18.dp
+        )
     }
 }
 

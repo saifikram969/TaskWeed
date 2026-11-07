@@ -9,6 +9,7 @@ import com.saif.scheduleapp.domain.usecase.AddTask
 import com.saif.scheduleapp.domain.usecase.ClearAllTasks
 import com.saif.scheduleapp.domain.usecase.DecideReminder
 import com.saif.scheduleapp.domain.usecase.DeleteTask
+import com.saif.scheduleapp.domain.usecase.GetMissedTasks
 import com.saif.scheduleapp.domain.usecase.GetStats
 import com.saif.scheduleapp.domain.usecase.GetTask
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
@@ -87,6 +88,9 @@ class AppModuleTest {
 
         val getStats = koinApp.koin.get<GetStats>()
         assertNotNull(getStats)
+
+        val getMissedTasks = koinApp.koin.get<GetMissedTasks>()
+        assertNotNull(getMissedTasks)
 
         val haptics = koinApp.koin.get<Haptics>()
         assertNotNull(haptics)
