@@ -1,8 +1,11 @@
 package com.saif.scheduleapp.core.util
 
 import kotlin.time.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 
 object TimeUtils {
@@ -66,6 +69,37 @@ object TimeUtils {
     }
 
     /**
+     * Formats an occurrence date relative to today (e.g. "Today", "Yesterday", "Mon, Nov 2").
+     */
+    fun formatOccurrenceDate(date: LocalDate, today: LocalDate = nowLocalDateTime().date): String {
+        return when (date) {
+            today -> "Today"
+            today.minus(1, DateTimeUnit.DAY) -> "Yesterday"
+            else -> {
+                val dayOfWeek = date.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+                val month = date.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+                @Suppress("DEPRECATION")
+                val dayNum = date.dayOfMonth
+                "$dayOfWeek, $month $dayNum"
+            }
+        }
+    }
+
+    /**
+     * Formats a missed task's occurrence date and time range, e.g. "Today • 09:00 AM - 10:00 AM".
+     */
+    fun formatMissedTimeRange(
+        startMinutes: Int,
+        endMinutes: Int,
+        date: LocalDate,
+        today: LocalDate = nowLocalDateTime().date
+    ): String {
+        val dateLabel = formatOccurrenceDate(date, today)
+        val timeRange = formatTimeRange(startMinutes, endMinutes)
+        return "$dateLabel • $timeRange"
+    }
+
+    /**
      * Determines if a task is currently active based on start-inclusive, end-exclusive rule.
      */
     fun isCurrent(startMinutes: Int, endMinutes: Int, currentMinutes: Int): Boolean {
@@ -84,4 +118,3 @@ object TimeUtils {
  * Helper function to format minutes into display string, e.g. "09:30 AM".
  */
 fun formatTime(minutes: Int): String = TimeUtils.formatMinutesToTimeString(minutes)
-

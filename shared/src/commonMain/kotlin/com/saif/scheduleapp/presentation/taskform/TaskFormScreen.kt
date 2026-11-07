@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.sp
 import com.saif.scheduleapp.core.designsystem.AppBackground
 import com.saif.scheduleapp.core.designsystem.AppCardBackground
 import com.saif.scheduleapp.core.designsystem.AppCardBorder
+import com.saif.scheduleapp.core.designsystem.AppDanger
+import com.saif.scheduleapp.core.designsystem.AppDangerContainer
+import com.saif.scheduleapp.core.designsystem.categoryColor
 import com.saif.scheduleapp.core.designsystem.AppPrimary
 import com.saif.scheduleapp.core.designsystem.AppPrimaryContainer
 import com.saif.scheduleapp.core.designsystem.AppTextMain
@@ -454,13 +457,13 @@ fun TaskFormScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF2D1619))
-                            .border(1.dp, Color(0xFFFF6B6B), RoundedCornerShape(16.dp))
+                            .background(AppDangerContainer)
+                            .border(1.dp, AppDanger, RoundedCornerShape(16.dp))
                             .padding(14.dp)
                     ) {
                         Text(
                             text = state.error,
-                            color = Color(0xFFFF6B6B),
+                            color = AppDanger,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -497,15 +500,15 @@ fun TaskFormScreen(
                             .height(52.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2D1619),
-                            contentColor = Color(0xFFFF6B6B)
+                            containerColor = AppDangerContainer,
+                            contentColor = AppDanger
                         )
                     ) {
                         Text(
                             text = "Delete Task",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFF6B6B)
+                            color = AppDanger
                         )
                     }
                 }
@@ -541,7 +544,7 @@ fun TaskFormScreen(
                 ) {
                     Text(
                         text = "Delete",
-                        color = Color(0xFFFF6B6B),
+                        color = AppDanger,
                         fontWeight = FontWeight.Bold
                     )
                 }

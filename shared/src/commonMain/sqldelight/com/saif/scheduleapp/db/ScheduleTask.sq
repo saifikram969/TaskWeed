@@ -62,6 +62,10 @@ selectCompletedTaskIdsForDate:
 SELECT taskId FROM taskCompletion
 WHERE date = :date;
 
+selectCompletionsBetweenDates:
+SELECT taskId, date FROM taskCompletion
+WHERE date >= :fromDate AND date <= :toDate;
+
 clearAllTasks:
 DELETE FROM scheduleTask;
 

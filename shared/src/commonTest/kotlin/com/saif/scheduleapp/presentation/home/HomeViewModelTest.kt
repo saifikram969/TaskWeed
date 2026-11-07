@@ -177,5 +177,116 @@ class HomeViewModelTest {
 
         job.cancel()
     }
-}
 
+    @Test
+    fun testGreetingsByTimeOfDay() {
+        assertEquals("Good morning", HomeViewModel.getGreeting(0))
+        assertEquals("Good morning", HomeViewModel.getGreeting(500))
+        assertEquals("Good morning", HomeViewModel.getGreeting(719))
+
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(720))
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(850))
+        assertEquals("Good afternoon", HomeViewModel.getGreeting(1019))
+
+        assertEquals("Good evening", HomeViewModel.getGreeting(1020))
+        assertEquals("Good evening", HomeViewModel.getGreeting(1200))
+        assertEquals("Good evening", HomeViewModel.getGreeting(1439))
+    }
+
+    @Test
+    fun testNowProgressAndRemainingMinutesCalculated() {
+        // Task 2: 600..660 (duration 60). At 630, progress is 30/60 = 0.5f, remaining is 30.
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630)
+        assertEquals(2L, state.nowTask?.id)
+        assertEquals(0.5f, state.nowProgress)
+        assertEquals(30, state.nowRemainingMinutes)
+    }
+
+    @Test
+    fun testDoneTasksListSeparated() {
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630)
+        assertEquals(1, state.doneTasks.size)
+        assertEquals(1L, state.doneTasks.first().id)
+        assertEquals(true, state.doneTasks.first().isDone)
+    }
+
+    @Test
+    fun testCurrentStreakPopulated() {
+        val state = HomeViewModel.calculateUiState(sampleTasks, nowMinutes = 630, currentStreak = 7)
+        assertEquals(7, state.currentStreak)
+    }
+
+    @Test
+    fun testMissedTasksPopulatedInHomeUiState() {
+        val missedTask = com.saif.scheduleapp.domain.model.MissedTask(
+            task = sampleTasks[1],
+            date = kotlinx.datetime.LocalDate(2026, 11, 5)
+        )
+        val state = HomeViewModel.calculateUiState(
+            tasks = sampleTasks,
+            nowMinutes = 630,
+            missedTasks = listOf(missedTask)
+        )
+        assertEquals(1, state.missedTasks.size)
+        assertEquals(2L, state.missedTasks.first().task.id)
+    }
+
+    @Test
+    fun testHomeTabsAndTodayMissedClassification() {
+        // At 700 minutes:
+        // Task 1 (540..600, isDone=true) -> DONE
+        // Task 2 (600..660, isDone=false) -> MISSED (ended at 660, current is 700)
+        // Task 3 (720..780, isDone=false) -> UPCOMING (starts at 720)
+        val state = HomeViewModel.calculateUiState(
+            tasks = sampleTasks,
+            nowMinutes = 700,
+            selectedTab = HomeTab.UPCOMING
+        )
+
+        assertEquals(HomeTab.UPCOMING, state.selectedTab)
+        assertNull(state.nowTask)
+        assertEquals(1, state.upcoming.size)
+        assertEquals(3L, state.upcoming.first().id)
+
+        assertEquals(1, state.missed.size)
+        assertEquals(2L, state.missed.first().id)
+
+        assertEquals(1, state.doneTasks.size)
+        assertEquals(1L, state.doneTasks.first().id)
+    }
+
+    @Test
+    fun testSelectedTabCanBeChanged() {
+        val stateMissed = HomeViewModel.calculateUiState(
+            tasks = sampleTasks,
+            nowMinutes = 700,
+            selectedTab = HomeTab.MISSED
+        )
+        assertEquals(HomeTab.MISSED, stateMissed.selectedTab)
+
+        val stateDone = HomeViewModel.calculateUiState(
+            tasks = sampleTasks,
+            nowMinutes = 700,
+            selectedTab = HomeTab.DONE
+        )
+        assertEquals(HomeTab.DONE, stateDone.selectedTab)
+    }
+
+    @Test
+    fun testAllTabsListsSortedByStartMinutes() {
+        val mixedTasks = listOf(
+            ScheduleTask(id = 1L, title = "Upcoming 2", details = "", startMinutes = 800, endMinutes = 850, category = Category.LEARNING, isDone = false),
+            ScheduleTask(id = 2L, title = "Upcoming 1", details = "", startMinutes = 700, endMinutes = 750, category = Category.JOBS, isDone = false),
+            ScheduleTask(id = 3L, title = "Missed 2", details = "", startMinutes = 400, endMinutes = 450, category = Category.REST, isDone = false),
+            ScheduleTask(id = 4L, title = "Missed 1", details = "", startMinutes = 300, endMinutes = 350, category = Category.PRAYER, isDone = false),
+            ScheduleTask(id = 5L, title = "Done 2", details = "", startMinutes = 200, endMinutes = 250, category = Category.PRAYER, isDone = true),
+            ScheduleTask(id = 6L, title = "Done 1", details = "", startMinutes = 100, endMinutes = 150, category = Category.REST, isDone = true)
+        )
+
+        val state = HomeViewModel.calculateUiState(mixedTasks, nowMinutes = 600)
+
+        assertEquals(listOf(700, 800), state.upcoming.map { it.startMinutes })
+        assertEquals(listOf(300, 400), state.missed.map { it.startMinutes })
+        assertEquals(listOf(100, 200), state.doneTasks.map { it.startMinutes })
+    }
+}

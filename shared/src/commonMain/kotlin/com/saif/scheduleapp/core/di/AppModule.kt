@@ -4,6 +4,8 @@ import com.saif.scheduleapp.domain.usecase.AddTask
 import com.saif.scheduleapp.domain.usecase.ClearAllTasks
 import com.saif.scheduleapp.domain.usecase.DecideReminder
 import com.saif.scheduleapp.domain.usecase.DeleteTask
+import com.saif.scheduleapp.domain.usecase.GetMissedTasks
+import com.saif.scheduleapp.domain.usecase.GetStats
 import com.saif.scheduleapp.domain.usecase.GetTask
 import com.saif.scheduleapp.domain.usecase.GetTodayTasks
 import com.saif.scheduleapp.domain.usecase.ImportTasks
@@ -13,6 +15,7 @@ import com.saif.scheduleapp.domain.usecase.UpdateTask
 import com.saif.scheduleapp.presentation.home.HomeViewModel
 import com.saif.scheduleapp.presentation.importschedule.ImportViewModel
 import com.saif.scheduleapp.presentation.reminder.ReminderViewModel
+import com.saif.scheduleapp.presentation.stats.StatsViewModel
 import com.saif.scheduleapp.presentation.taskform.TaskFormViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -34,12 +37,16 @@ val appModule: Module = module {
     factory { GetTask(repository = get()) }
     factory { UpdateTask(repository = get(), scheduler = get(), decideReminder = get()) }
     factory { DeleteTask(repository = get(), scheduler = get(), decideReminder = get()) }
+    factory { GetStats(repository = get()) }
+    factory { GetMissedTasks(repository = get()) }
 
     // Presentation ViewModels
-    factory {
+    single {
         HomeViewModel(
             getTodayTasks = get(),
             markTaskDone = get(),
+            getStats = get(),
+            getMissedTasks = get(),
             pdfReader = getOrNull()
         )
     }
@@ -62,6 +69,11 @@ val appModule: Module = module {
         ImportViewModel(
             pdfReader = get(),
             importTasks = get()
+        )
+    }
+    single {
+        StatsViewModel(
+            getStats = get()
         )
     }
 }

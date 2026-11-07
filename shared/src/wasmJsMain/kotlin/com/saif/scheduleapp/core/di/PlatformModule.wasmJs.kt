@@ -1,5 +1,7 @@
 package com.saif.scheduleapp.core.di
 
+import com.saif.scheduleapp.core.platform.Haptics
+import com.saif.scheduleapp.core.platform.WebHaptics
 import com.saif.scheduleapp.data.repository.InMemoryScheduleRepository
 import com.saif.scheduleapp.domain.platform.PdfReader
 import com.saif.scheduleapp.domain.platform.ReminderScheduler
@@ -22,6 +24,7 @@ actual val platformModule: Module = module {
     single<ReminderScheduler> { WebReminderScheduler() }
     single<Speaker> { WebSpeaker() }
     single<PdfReader> { WasmJsPdfReader() }
+    single<Haptics> { WebHaptics() }
 
     single<ScheduleRepository> { InMemoryScheduleRepository() }
 }

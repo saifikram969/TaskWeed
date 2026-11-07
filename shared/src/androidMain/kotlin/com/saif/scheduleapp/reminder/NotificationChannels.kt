@@ -11,8 +11,12 @@ object NotificationChannels {
     const val REMINDERS_CHANNEL_ID = "task_reminders_channel"
     const val REMINDERS_CHANNEL_NAME = "Task Reminders"
 
+    const val SILENT_SERVICE_CHANNEL_ID = "task_reminders_silent_channel"
+    const val SILENT_SERVICE_CHANNEL_NAME = "Task Reminders (Active Service)"
+
     /**
-     * Creates the high-priority reminder notification channel on Android O (API 26) and above.
+     * Creates both high-priority alert and low-priority silent notification channels
+     * on Android O (API 26) and above.
      */
     fun createReminderChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -22,7 +26,7 @@ object NotificationChannels {
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .build()
 
-            val channel = NotificationChannel(
+            val reminderChannel = NotificationChannel(
                 REMINDERS_CHANNEL_ID,
                 REMINDERS_CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
@@ -33,9 +37,21 @@ object NotificationChannels {
                 setSound(defaultSoundUri, audioAttributes)
             }
 
+            val silentChannel = NotificationChannel(
+                SILENT_SERVICE_CHANNEL_ID,
+                SILENT_SERVICE_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Active reminder service notifications"
+                enableVibration(false)
+                enableLights(false)
+                setSound(null, null)
+                setShowBadge(false)
+            }
+
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-            notificationManager?.createNotificationChannel(channel)
+            notificationManager?.createNotificationChannel(reminderChannel)
+            notificationManager?.createNotificationChannel(silentChannel)
         }
     }
 }
-

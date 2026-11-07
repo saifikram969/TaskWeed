@@ -9,15 +9,39 @@ import android.util.Log
 import com.saif.scheduleapp.domain.platform.Speaker
 import java.util.Locale
 
+interface SpeechListener {
+    fun onSpeechStarted()
+    fun onSpeechFinished()
+    fun onSpeechError(errorCode: Int? = null)
+}
+
 class AndroidSpeaker(
     private val context: Context,
-    private val onSpeechCompleted: (() -> Unit)? = null
+    private var speechListener: SpeechListener? = null
 ) : Speaker {
+
+    constructor(context: Context, onSpeechCompleted: (() -> Unit)?) : this(
+        context = context,
+        speechListener = if (onSpeechCompleted != null) {
+            object : SpeechListener {
+                override fun onSpeechStarted() {}
+                override fun onSpeechFinished() { onSpeechCompleted() }
+                override fun onSpeechError(errorCode: Int?) { onSpeechCompleted() }
+            }
+        } else null
+    )
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var tts: TextToSpeech? = null
     private var isInitialized = false
     private val pendingQueue = mutableListOf<String>()
+
+    val isSpeaking: Boolean
+        get() = tts?.isSpeaking == true
+
+    fun setSpeechListener(listener: SpeechListener?) {
+        this.speechListener = listener
+    }
 
     @Synchronized
     private fun initTtsIfNeeded(onReady: (TextToSpeech) -> Unit) {
@@ -43,12 +67,15 @@ class AndroidSpeaker(
                         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                             override fun onStart(utteranceId: String?) {
                                 Log.d("AndroidSpeaker", "TTS onStart: $utteranceId")
+                                mainHandler.post {
+                                    speechListener?.onSpeechStarted()
+                                }
                             }
 
                             override fun onDone(utteranceId: String?) {
                                 Log.d("AndroidSpeaker", "TTS onDone: $utteranceId")
                                 mainHandler.post {
-                                    onSpeechCompleted?.invoke()
+                                    speechListener?.onSpeechFinished()
                                 }
                             }
 
@@ -56,14 +83,14 @@ class AndroidSpeaker(
                             override fun onError(utteranceId: String?) {
                                 Log.e("AndroidSpeaker", "TTS onError: $utteranceId")
                                 mainHandler.post {
-                                    onSpeechCompleted?.invoke()
+                                    speechListener?.onSpeechError(null)
                                 }
                             }
 
                             override fun onError(utteranceId: String?, errorCode: Int) {
                                 Log.e("AndroidSpeaker", "TTS onError: $utteranceId, code: $errorCode")
                                 mainHandler.post {
-                                    onSpeechCompleted?.invoke()
+                                    speechListener?.onSpeechError(errorCode)
                                 }
                             }
                         })
@@ -76,7 +103,9 @@ class AndroidSpeaker(
                         }
                     } else {
                         Log.e("AndroidSpeaker", "TextToSpeech init failed with status: $status")
-                        onSpeechCompleted?.invoke()
+                        mainHandler.post {
+                            speechListener?.onSpeechError(status)
+                        }
                     }
                 }
             }
@@ -85,7 +114,9 @@ class AndroidSpeaker(
 
     override fun speak(text: String) {
         if (text.isBlank()) {
-            onSpeechCompleted?.invoke()
+            mainHandler.post {
+                speechListener?.onSpeechFinished()
+            }
             return
         }
 
@@ -104,7 +135,17 @@ class AndroidSpeaker(
         val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
         if (result != TextToSpeech.SUCCESS) {
             Log.e("AndroidSpeaker", "TTS speak failed with result code: $result")
-            onSpeechCompleted?.invoke()
+            mainHandler.post {
+                speechListener?.onSpeechError(result)
+            }
+        }
+    }
+
+    fun stop() {
+        try {
+            tts?.stop()
+        } catch (e: Exception) {
+            Log.w("AndroidSpeaker", "Error stopping TTS: ${e.message}")
         }
     }
 
@@ -118,6 +159,7 @@ class AndroidSpeaker(
             tts = null
             isInitialized = false
             pendingQueue.clear()
+            speechListener = null
         }
     }
 }

@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 class InMemoryScheduleRepository(
     initialTasks: List<ScheduleTask> = emptyList()
@@ -22,6 +25,20 @@ class InMemoryScheduleRepository(
         if (initialDoneIds.isNotEmpty()) {
             val today = TimeUtils.nowLocalDateTime().date
             _completedTasks.value = mapOf(today to initialDoneIds)
+        }
+    }
+
+    override fun observeAllTasks(): Flow<List<ScheduleTask>> = _tasks
+
+    override fun observeCompletions(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, Set<Long>>> {
+        return _completedTasks.map { completedMap ->
+            val result = mutableMapOf<LocalDate, Set<Long>>()
+            var d = from
+            while (d <= to) {
+                result[d] = completedMap[d] ?: emptySet()
+                d = d.plus(1, DateTimeUnit.DAY)
+            }
+            result
         }
     }
 

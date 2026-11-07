@@ -1,5 +1,6 @@
 package com.saif.scheduleapp.reminder
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -21,6 +22,8 @@ class ReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_TRIGGER_REMINDER = "com.saif.scheduleapp.reminder.TRIGGER_REMINDER"
+        const val ACTION_SNOOZE_TASK = "com.saif.scheduleapp.reminder.ACTION_SNOOZE_TASK"
+        const val ACTION_START_TASK = "com.saif.scheduleapp.reminder.ACTION_START_TASK"
         const val EXTRA_TASK_ID = "extra_task_id"
         const val EXTRA_TASK_TITLE = "extra_task_title"
         const val EXTRA_TASK_DETAILS = "extra_task_details"
@@ -33,6 +36,42 @@ class ReminderReceiver : BroadcastReceiver() {
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, -1L)
         if (taskId <= 0) {
             Log.w("ReminderReceiver", "Received trigger with invalid task ID: $taskId; ignoring.")
+            return
+        }
+
+        if (intent.action == ACTION_SNOOZE_TASK) {
+            Log.d("ReminderReceiver", "Notification action Snooze received for task ID $taskId")
+            ReminderService.stopSpeechAndFinish(taskId)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            val notificationId = 10000 + (taskId % 10000).toInt()
+            notificationManager?.cancel(notificationId)
+
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.Default).launch {
+                try {
+                    val koin = KoinPlatform.getKoinOrNull()
+                    val repository = koin?.getOrNull<ScheduleRepository>()
+                    val scheduler = koin?.getOrNull<ReminderScheduler>() ?: AndroidReminderScheduler(context)
+                    val task = repository?.getTask(taskId)
+                    if (task != null) {
+                        scheduler.snooze(task, 5)
+                        Log.d("ReminderReceiver", "Task ID $taskId successfully snoozed for 5 minutes")
+                    }
+                } catch (e: Exception) {
+                    Log.e("ReminderReceiver", "Failed to snooze task ID $taskId: ${e.message}", e)
+                } finally {
+                    pendingResult.finish()
+                }
+            }
+            return
+        }
+
+        if (intent.action == ACTION_START_TASK) {
+            Log.d("ReminderReceiver", "Notification action Start/Accept received for task ID $taskId")
+            ReminderService.stopSpeechAndFinish(taskId)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            val notificationId = 10000 + (taskId % 10000).toInt()
+            notificationManager?.cancel(notificationId)
             return
         }
 
